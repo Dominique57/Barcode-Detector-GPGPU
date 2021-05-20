@@ -1,5 +1,6 @@
 # Find libraries
 find_package(Boost COMPONENTS program_options REQUIRED)
+find_package(OpenCV REQUIRED)
 
 # Eventually do library handling if release or not
 if (CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -10,6 +11,8 @@ endif()
 add_library(SOURCE_LIB STATIC
     # TODO: add your source file here
     main.cc main.hh
+
+    image/image.cc image/image.hh
 )
 
 # add important compile features
@@ -28,6 +31,7 @@ target_compile_options(SOURCE_LIB PRIVATE
 # link library to my files (ex: -lm for math utilities)
 target_link_libraries(SOURCE_LIB
     ${Boost_LIBRARIES}
+    ${OpenCV_LIBS}
 )
 
 # This is gcc's -I option for simple #include<> directive
@@ -35,4 +39,5 @@ target_link_libraries(SOURCE_LIB
 target_include_directories(SOURCE_LIB PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${Boost_INCLUDE_DIR}
+    ${OpenCV_INCLUDE_DIRS}
 )

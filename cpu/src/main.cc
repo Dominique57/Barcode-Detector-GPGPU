@@ -1,4 +1,6 @@
+#include <stdexcept>
 #include "main.hh"
+#include "image/image.hh"
 
 namespace po = boost::program_options;
 
@@ -20,6 +22,8 @@ po::options_description define_options()
     po::options_description desc("Allowed options");
     desc.add_options()
         ("help,h", "show usage");
+    desc.add_options()
+        ("image,i", po::value<std::string>(), "input image path");
     return desc;
 }
 
@@ -35,6 +39,14 @@ po::variables_map parse_options(const po::options_description& desc, int argc,
 
 void run(const po::options_description& desc, const po::variables_map& vm)
 {
-    if (vm.count("help"))
+    if (vm.count("help")) {
         std::cout << desc << std::endl;
+        return;
+    } else if (vm["image"].empty()) {
+        std::cerr << "No image path given" << std::endl;
+        return;
+    }
+
+    auto image_path = vm["image"].as<std::string>().c_str();
+    auto image = Image(image_path);
 }
