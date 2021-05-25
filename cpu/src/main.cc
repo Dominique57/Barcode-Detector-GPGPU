@@ -1,6 +1,8 @@
 #include <stdexcept>
+#include <lbp/lbp.hh>
 #include "main.hh"
 #include "image/image.hh"
+#include "image/matrix.hh"
 
 namespace po = boost::program_options;
 
@@ -48,5 +50,8 @@ void run(const po::options_description& desc, const po::variables_map& vm)
     }
 
     auto image_path = vm["image"].as<std::string>().c_str();
-    auto image = Image(image_path);
+    auto image = Matrix(3024, 4032);
+    Matrix::readMatrix(image_path, image);
+    auto lbp = Lbp(image);
+    lbp.run();
 }
