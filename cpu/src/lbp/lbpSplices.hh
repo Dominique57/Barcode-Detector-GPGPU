@@ -7,11 +7,11 @@ class LbpSplices {
 public:
     LbpSplices(Matrix &image, unsigned slicesSize);
 
-    void addLocalPattern(Matrix &resFeatures, const std::vector<std::pair<int, int>> &vector);
+    void addLocalPatterns(Matrix &resFeatures, const std::vector<std::pair<int, int>> &neighs);
 
 protected:
-    void addSliceTexton(Matrix &resFeatures, const std::vector<std::pair<int, int>> &neighs,
-                        const Splice &splice, unsigned sliceindex);
+    void addSliceTextons(Matrix &resFeatures, const std::vector<std::pair<int, int>> &neighs,
+                         const Splice &splice, unsigned sliceIndex);
 
 private:
     static std::vector<std::pair<int, int>> textonsOffset;

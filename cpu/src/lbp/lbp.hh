@@ -26,8 +26,7 @@ public:
                                   matrix_.width() / slicesSize * matrix_.height() / slicesSize);
 
         auto splices = LbpSplices(matrix_, slicesSize);
-        splices.addLocalPattern(resFeatures, pixelsNeighs);
-        std::cout << (int)resFeatures[0][0] << ":" << (int)resFeatures[0][0] << std::endl;
+        splices.addLocalPatterns(resFeatures, pixelsNeighs);
 
         // Normalize histograms (opt)
         // Run k-neighbours
