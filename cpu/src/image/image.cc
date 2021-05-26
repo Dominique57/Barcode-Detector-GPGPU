@@ -1,4 +1,4 @@
 #include "image.hh"
 
-Image::Image(const std::string &filePath) {
+Image::Image(const std::string &) {
 }

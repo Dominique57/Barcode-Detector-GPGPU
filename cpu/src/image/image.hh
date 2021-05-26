@@ -5,7 +5,7 @@
 
 class Image {
 public:
-    Image(const std::string& filePath);
+    Image(const std::string&);
 
 private:
     unsigned width_;

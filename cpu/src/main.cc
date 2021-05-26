@@ -50,7 +50,7 @@ void run(const po::options_description& desc, const po::variables_map& vm)
     }
 
     auto image_path = vm["image"].as<std::string>().c_str();
-    auto image = Matrix(3024, 4032);
+    auto image = Matrix(4032, 3024);
     Matrix::readMatrix(image_path, image);
     auto lbp = Lbp(image);
     lbp.run();

@@ -1,5 +1,6 @@
 #include <stdexcept>
 #include <sstream>
+#include <iostream>
 #include "matrix.hh"
 
 void Matrix::readMatrix(const std::string &path, Matrix &matrix) {
@@ -14,6 +15,9 @@ void Matrix::readMatrix(const std::string &path, Matrix &matrix) {
                 throw std::invalid_argument(ss.str());
             }
             matrix[y][x] = current;
+        }
+        if (fin.peek() != '\n') {
+            throw std::invalid_argument(std::string("Error during image read, eol not reached !"));
         }
     }
     std::string next;

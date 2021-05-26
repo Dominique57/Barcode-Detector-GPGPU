@@ -23,7 +23,7 @@ target_compile_options(SOURCE_LIB PRIVATE
     "-Wall"
     "-Wextra"
     $<$<CONFIG:Release>:-Werror -Ofast>
-    $<$<CONFIG:Debug>:-O0 -g0>
+    $<$<CONFIG:Debug>:-O0 -ggdb>
     "-pedantic"
 )
 
