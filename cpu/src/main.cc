@@ -1,7 +1,7 @@
 #include <stdexcept>
 #include <lbp/lbp.hh>
+#include <kmeans/KmeansTransform.hh>
 #include "main.hh"
-#include "image/image.hh"
 #include "image/matrix.hh"
 
 namespace po = boost::program_options;
@@ -50,8 +50,17 @@ void run(const po::options_description& desc, const po::variables_map& vm)
     }
 
     auto image_path = vm["image"].as<std::string>().c_str();
-    auto image = Matrix(4032, 3024);
-    Matrix::readMatrix(image_path, image);
+    auto image = Matrix<>(4032, 3024);
+    Matrix<>::readMatrix(image_path, image);
+
+    // Execute lbp
     auto lbp = Lbp(image);
-    lbp.run();
+    auto features = lbp.run();
+
+    // Execute kmeans
+    auto labels = Matrix<>(1, lbp.patchCount());
+    KmeansTransform kmeans("kmeans.database", 16, lbp.textonSize());
+    kmeans.transform(features, labels);
+
+    // Extract barcode position
 }

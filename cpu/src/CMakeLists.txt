@@ -8,11 +8,16 @@ endif()
 
 # Add your source files here
 add_library(SOURCE_LIB STATIC
-    # TODO: add your source file here
-    main.cc main.hh
+        # TODO: add your source file here
+        main.cc main.hh
 
-    image/image.cc image/image.hh
-        image/splice.cc image/splice.hh image/matrix.cc image/matrix.hh lbp/lbp.cc lbp/lbp.hh lbp/lbpSplices.cc lbp/lbpSplices.hh)
+        image/splice.cc image/splice.hh
+        image/matrix.cc image/matrix.hh
+
+        lbp/lbp.cc lbp/lbp.hh
+        lbp/lbpSplices.cc lbp/lbpSplices.hh
+
+        kmeans/KmeansTransform.cc kmeans/KmeansTransform.hh)
 
 # add important compile features
 target_compile_features(SOURCE_LIB PRIVATE
