@@ -3,9 +3,10 @@
 #include <iostream>
 #include "matrix.hh"
 
-void Matrix::readMatrix(const std::string &path, Matrix &matrix) {
+template<>
+void Matrix<float>::readMatrix(const std::string &path, Matrix<float> &matrix) {
     auto fin = std::ifstream(path);
-    unsigned current;
+    float current;
     for (auto y = 0U; y < matrix.height_; ++y) {
         for (auto x = 0U; x < matrix.width(); ++x) {
             fin >> current;

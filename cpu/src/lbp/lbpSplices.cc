@@ -1,11 +1,11 @@
 #include <iostream>
 #include "lbpSplices.hh"
 
-LbpSplices::LbpSplices(Matrix &image, unsigned int slicesSize)
+LbpSplices::LbpSplices(Matrix<> &image, unsigned int slicesSize)
         : image_(image), slicesSize_(slicesSize)
 {}
 
-void LbpSplices::addLocalPatterns(Matrix &resFeatures, const std::vector<std::pair<int, int>> &neighs) {
+void LbpSplices::addLocalPatterns(Matrix<> &resFeatures, const std::vector<std::pair<int, int>> &neighs) {
     unsigned sliceIndex = 0;
     for (auto y = 0U; y < image_.height(); y += slicesSize_) {
         for (auto x = 0U; x < image_.width(); x += slicesSize_) {
@@ -16,7 +16,7 @@ void LbpSplices::addLocalPatterns(Matrix &resFeatures, const std::vector<std::pa
     }
 }
 
-void LbpSplices::addSliceTextons(Matrix &resFeatures, const std::vector<std::pair<int, int>> &neighs,
+void LbpSplices::addSliceTextons(Matrix<> &resFeatures, const std::vector<std::pair<int, int>> &neighs,
                                  const Splice &splice, unsigned sliceIndex) {
     for (auto y = 0U; y < splice.height(); ++y) {
         for (auto x = 0U; x < splice.width(); ++x) {
