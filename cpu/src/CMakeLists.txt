@@ -10,7 +10,9 @@ add_library(SOURCE_LIB STATIC
     lbp/lbp.cc lbp/lbp.hh
     lbp/lbpSplices.cc lbp/lbpSplices.hh
 
-    kmeans/KmeansTransform.cc kmeans/KmeansTransform.hh)
+    kmeans/KmeansTransform.cc kmeans/KmeansTransform.hh
+
+    benchmark/Bench.cc benchmark/Bench.hh)
 
 # add important compile features
 target_compile_features(SOURCE_LIB PRIVATE
@@ -27,7 +29,7 @@ target_compile_options(SOURCE_LIB PRIVATE
 
 # link library to my files (ex: -lm for math utilities)
 if (NOT ${OpenCV_opencv_core_FOUND} OR NOT ${OpenCV_opencv_imgcodecs_FOUND} OR NOT ${OpenCV_opencv_highgui_FOUND})
-    message( SEND_ERROR "Missing opencv `core` or `imgcodecs` or `highgui` library !" )
+    message(SEND_ERROR "Missing opencv `core` or `imgcodecs` or `highgui` library !")
 endif ()
 
 target_link_libraries(SOURCE_LIB
