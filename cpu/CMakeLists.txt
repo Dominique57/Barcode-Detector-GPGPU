@@ -19,5 +19,24 @@ enable_testing()
 add_subdirectory(test)
 
 # final binary output
+find_package(Boost COMPONENTS program_options REQUIRED)
+
+# Eventually do library handling if release or not
+if (CMAKE_BUILD_TYPE STREQUAL "Release")
+    set(Boost_USE_STATIC_LIBS ON)
+endif()
+
+# add important compile features
 add_executable(${PROJECT_NAME} src/main.cc)
-target_link_libraries(${PROJECT_NAME} LINK_PUBLIC SOURCE_LIB)
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
+target_compile_options(${PROJECT_NAME} PRIVATE
+        "-Wall"
+        "-Wextra"
+        $<$<CONFIG:Release>:-Werror -Ofast>
+        $<$<CONFIG:Debug>:-O0 -ggdb>
+        "-pedantic"
+        )
+target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${Boost_INCLUDE_DIR})
+
+# link library to my files (ex: -lm for math utilities)
+target_link_libraries(${PROJECT_NAME} LINK_PUBLIC ${Boost_LIBRARIES} SOURCE_LIB)
