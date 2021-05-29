@@ -9,10 +9,14 @@ add_library(SOURCE_LIB STATIC
     image/splice.cu image/splice.hh
     image/matrix.cu image/matrix.hh
 
-    lbp/lbp.cc lbp/lbp.hh
-    lbp/lbpSplices.cu lbp/lbpSplices.hh
+    kmeans/KmeansTransform.cc kmeans/KmeansTransform.hh
 
-    kmeans/KmeansTransform.cc kmeans/KmeansTransform.hh cuda/mycuda.hh)
+    cuda/mycuda.hh
+
+    lbp/lbpAlgorithm.hh
+    lbp/lbpCpu.hh lbp/lbpGpu.hh
+    lbp/lbpGpu.cu lbp/lbpCpu.cc
+    )
 
 # add important compile features
 target_compile_features(SOURCE_LIB PRIVATE
