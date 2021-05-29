@@ -14,6 +14,7 @@ add_library(SOURCE_LIB STATIC
 
     benchmark/Bench.cc benchmark/Bench.hh)
 
+
 # add important compile features
 target_compile_features(SOURCE_LIB PRIVATE
     cxx_std_17
@@ -21,11 +22,13 @@ target_compile_features(SOURCE_LIB PRIVATE
 
 target_compile_options(SOURCE_LIB PRIVATE
     "-Wall"
-    "-Wextra"
     $<$<CONFIG:Release>:-Werror -Ofast>
     $<$<CONFIG:Debug>:-O0 -ggdb>
     "-pedantic"
     )
+
+
+
 
 # link library to my files (ex: -lm for math utilities)
 if (NOT ${OpenCV_opencv_core_FOUND} OR NOT ${OpenCV_opencv_imgcodecs_FOUND} OR NOT ${OpenCV_opencv_highgui_FOUND})

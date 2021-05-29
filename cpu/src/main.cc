@@ -3,11 +3,14 @@
 #include <kmeans/KmeansTransform.hh>
 #include "main.hh"
 #include "image/matrix.hh"
+#include "benchmark/Bench.hh"
+
 
 namespace po = boost::program_options;
 
 int main(int argc, char** argv)
 {
+    bench::Bench::start("test", std::chrono::steady_clock::now());
     try {
         auto const& desc = define_options();
         auto const& vm = parse_options(desc, argc, argv);
@@ -16,6 +19,8 @@ int main(int argc, char** argv)
         std::cerr << "[ERROR] " << e.what() << std::endl;
         return 2;
     }
+    bench::Bench::end("test", std::chrono::steady_clock::now());
+    bench::Bench::duration("test");
     return 0;
 }
 
