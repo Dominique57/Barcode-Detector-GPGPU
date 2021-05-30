@@ -10,7 +10,8 @@ namespace po = boost::program_options;
 
 int main(int argc, char** argv)
 {
-    bench::Bench::start("test", std::chrono::steady_clock::now());
+    auto test1 = "test CPU";
+    bench::Bench::start(test1);
     try {
         auto const& desc = define_options();
         auto const& vm = parse_options(desc, argc, argv);
@@ -19,8 +20,8 @@ int main(int argc, char** argv)
         std::cerr << "[ERROR] " << e.what() << std::endl;
         return 2;
     }
-    bench::Bench::end("test", std::chrono::steady_clock::now());
-    bench::Bench::duration("test");
+    bench::Bench::end(test1);
+    bench::Bench::print(std::cerr, test1, "milliseconds");
     return 0;
 }
 
