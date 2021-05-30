@@ -21,6 +21,8 @@ public:
 
     virtual Matrix<> &getFeatures() = 0;
 
+    unsigned numberOfPatches() const { return (width_ / SLICE_SIZE) * (height_ / SLICE_SIZE); }
+
 protected:
     unsigned width_;
     unsigned height_;

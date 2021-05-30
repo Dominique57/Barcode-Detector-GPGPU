@@ -74,3 +74,7 @@ Matrix<> &LbpGpu::getFeatures() {
     cudaMemcpy(features_.getData(), cudaFeatures_.getData(), featureSize, cudaMemcpyDeviceToHost);
     return features_;
 }
+
+Matrix<> &LbpGpu::getCudaFeatures() {
+    return cudaFeatures_;
+}

@@ -12,17 +12,16 @@ public:
             : centroids_(clusterDim, nbClusters),
               nbClusters_(nbClusters),
               clusterDim_(clusterDim) {
-        loadCentroids(path);
+        Matrix<>::readMatrix(path, centroids_);
     }
 
     KmeansTransform(KmeansTransform &kmeans) = delete;
     KmeansTransform(KmeansTransform &&kmeans) = delete;
     void operator=(KmeansTransform &kmeans) = delete;
 
-    void transform(const Matrix<float> &features, Matrix<>& labels) const;
+    void transform(const Matrix<> &features, Matrix<unsigned char>& labels) const;
 
 protected:
-    void loadCentroids(const std::string &path);
     float computeDistance(unsigned clusterIndex, const float* feature) const;
 
 private:
