@@ -14,15 +14,16 @@ namespace bench {
         Bench(const Bench&&) = delete;
         Bench operator=(const Bench&) = delete;
 
-        // Add a new start time in timers_start mapped with a string.
+        // Adds a new start time in timers_start mapped with a string.
         static void start(const std::string& name);
 
-        // Add a new end time in timers_end mapped with a string.
+        // Adds a new end time in timers_end mapped with a string.
         static void end(const std::string& name);
 
         // The duration computed between the specified start time and specified end time.
         static double duration(const std::string& name, const std::string& type = "seconds");
 
+        // Prints one benchmark.
         static void print(std::ostream& out, const std::string& name, const std::string& type = "seconds");
 
 
