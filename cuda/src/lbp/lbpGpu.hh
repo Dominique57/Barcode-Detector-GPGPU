@@ -14,6 +14,7 @@ public:
     void run(Matrix<> &grayImage) override;
 
     Matrix<> &getFeatures() override;
+    Matrix<> &getCudaFeatures();
 
 private:
     Matrix<> cudaImage_;

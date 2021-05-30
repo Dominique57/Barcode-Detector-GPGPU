@@ -1,39 +1,7 @@
 #include <iostream>
 #include "KmeansTransform.hh"
 
-void KmeansTransform::loadCentroids(const std::string &path) {
-    std::ifstream fin(path);
-
-    auto i = 0U;
-    for (; i < nbClusters_ && fin.good(); ++i) {
-        std::string line;
-        std::getline(fin, line);
-        std::stringstream lineStream(line);
-
-        // Could make function of this chunk for code cleanness
-        auto j = 0U;
-        for (; j < clusterDim_ && lineStream.good(); ++j) {
-            float centroids_feature;
-            fin >> centroids_feature;
-            centroids_[i][j] = centroids_feature;
-        }
-        // Safety checks
-        if (j != clusterDim_) {
-            if (lineStream.eof())
-                throw std::invalid_argument(std::to_string(i) + "th line has not enough scalars");
-            throw std::invalid_argument("I/O error !");
-        }
-    }
-
-    // Safety checks
-    if (i != nbClusters_) {
-        if (fin.eof())
-            throw std::invalid_argument("Number of line is insufficient for kmeans model !");
-        throw std::invalid_argument("I/O error !");
-    }
-}
-
-void KmeansTransform::transform(const Matrix<float> &features, Matrix<> &labels) const {
+void KmeansTransform::transform(const Matrix<> &features, Matrix<unsigned char> &labels) const {
     if (features.width() != clusterDim_)
         throw std::invalid_argument("Features have incorrect dimension !");
     if (features.height() > labels.height())
@@ -57,8 +25,10 @@ void KmeansTransform::transform(const Matrix<float> &features, Matrix<> &labels)
 
 float KmeansTransform::computeDistance(unsigned clusterIndex, const float* feature) const {
     float sum = 0;
-    for (auto i = 0U; i < clusterDim_; ++i)
-        sum += feature[i] * centroids_[clusterIndex][i];
+    for (auto i = 0U; i < clusterDim_; ++i) {
+        float sub = feature[i] - centroids_[clusterIndex][i];
+        sum += sub * sub;
+    }
 
     return sqrtf(sum);
 }

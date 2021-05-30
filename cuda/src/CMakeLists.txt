@@ -16,6 +16,7 @@ add_library(SOURCE_LIB STATIC
     lbp/lbpAlgorithm.hh
     lbp/lbpCpu.hh lbp/lbpGpu.hh
     lbp/lbpGpu.cu lbp/lbpCpu.cc
+    kmeans/kmeansTransformGpu.cu kmeans/kmeansTransformGpu.hh
     )
 
 # add important compile features
