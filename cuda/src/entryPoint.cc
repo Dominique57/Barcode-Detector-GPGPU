@@ -38,8 +38,10 @@ void executeAlgorithm(const std::string &path) {
     std::cout << "Running GPU (1050ti)" << std::endl;
     auto start2 = std::chrono::system_clock::now();
 
-    lbpGpu.run(image);
-    kmeanGpu.transform(lbpGpu.getCudaFeatures(), labelsGpu);
+    for (auto i =  0U; i < 100; ++i) {
+        lbpGpu.run(image);
+        kmeanGpu.transform(lbpGpu.getCudaFeatures(), labelsGpu);
+    }
 
     auto end2 = std::chrono::system_clock::now();
     auto elapsedMs2 = std::chrono::duration_cast<std::chrono::milliseconds>(end2 - start2);

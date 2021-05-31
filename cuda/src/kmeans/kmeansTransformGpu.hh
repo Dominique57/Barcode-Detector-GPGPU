@@ -15,7 +15,7 @@ public:
     KmeansTransformGpu(KmeansTransformGpu &&kmeans) = delete;
     void operator=(KmeansTransformGpu &kmeans) = delete;
 
-    void transform(const Matrix<float> &features, Matrix<unsigned char>& labels) const;
+    void transform(const Matrix<float> &features, Matrix<unsigned char>& labels);
 
 
 private:
