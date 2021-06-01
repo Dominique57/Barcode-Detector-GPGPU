@@ -14,4 +14,4 @@ po::variables_map parse_options(const po::options_description& decs, int argc,
         char** argv);
 
 /// Read input and execute accordingly
-void run(const po::options_description& desc, const po::variables_map& vm);
+int run(const po::options_description& desc, const po::variables_map& vm);
