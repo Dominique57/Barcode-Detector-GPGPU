@@ -8,6 +8,9 @@
 #include "entryPoint.hh"
 
 #include <opencv2/highgui.hpp>
+#include <opencv2/videoio.hpp>
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/imgproc.hpp>
 
 void executeAlgorithm(const std::string &path) {
     auto image = Matrix<>(4032U, 3024U);
@@ -117,4 +120,136 @@ void executeAlgorithm(const std::string &path) {
         cv::imshow("test", mat * 16);
         cv::waitKey(0);
     }
+}
+
+
+static inline Matrix<> createMatrix(const cv::Mat &mat) {
+    auto res = Matrix<>(mat.cols, mat.rows);
+    for (auto y = 0U; y < res.height(); ++y) {
+        for (auto x = 0U; x < res.width(); ++x) {
+            res[y][x] = mat.at<unsigned char>((int)y, (int)x);
+        }
+    }
+    return res;
+}
+
+void handleImage(const std::string &imagePath) {
+    cv::Mat cvImage = cv::imread(imagePath, cv::IMREAD_GRAYSCALE);
+    Matrix<> image = createMatrix(cvImage);
+
+    // Show input image
+    cv::Mat showCvImage;
+    cv::resize(cvImage, showCvImage, cv::Size_(1300, 800));
+    cv::imshow("test", showCvImage);
+    cv::waitKey(0);
+
+    // lbp on Gpu
+    auto lbpGpu = LbpGpu(image.width(), image.height());
+    auto kmeanGpu = KmeansTransformGpu("kmeans.database", 16, 256);
+    auto labelsGpu = Matrix<unsigned char>(1, lbpGpu.numberOfPatches());
+
+    // Run
+    lbpGpu.run(image);
+    kmeanGpu.transform(lbpGpu.getCudaFeatures(), labelsGpu);
+
+    // Show result
+    auto mat = cv::Mat(labelsGpu.height() / (image.width() / 16), image.width() / 16, CV_8U);
+    for (auto y = 0; y < mat.rows; y++) {
+        for (auto x = 0; x < mat.cols; ++x) {
+            if (labelsGpu[y * mat.cols + x][0] == 15) {
+                mat.at<unsigned char>(y, x) = 255;
+            } else {
+                mat.at<unsigned char>(y, x) = 0;
+            }
+        }
+    }
+    cv::imshow("test", mat);
+    cv::waitKey(0);
+}
+
+void handleVideo(const std::string &videoPath) {
+    cv::VideoCapture cap(videoPath);
+    if (!cap.isOpened())
+        throw std::invalid_argument("Cannot open the video file !");
+    // double fps = cap.get(cv::CAP_PROP_FPS); //get the frames per seconds of the video
+    namedWindow("Original", cv::WINDOW_AUTOSIZE); //create a window called "MyVideo"
+    namedWindow("Predicted", cv::WINDOW_AUTOSIZE); //create a window called "MyVideo"
+
+    // lbp on Gpu
+    auto lbpGpu = LbpGpu(
+        (unsigned)(cap.get(cv::CAP_PROP_FRAME_WIDTH)),
+        (unsigned)(cap.get(cv::CAP_PROP_FRAME_HEIGHT))
+    );
+    auto kmeanGpu = KmeansTransformGpu("kmeans.database", 16, 256);
+    auto labelsGpu = Matrix<unsigned char>(1, lbpGpu.numberOfPatches());
+
+    cv::Mat frame;
+    cv::Mat Gray_frame;
+    bool escapePressed = false;
+    while (!escapePressed)
+    {
+        if (!cap.read(frame)) { // video ended
+            cap.set(cv::CAP_PROP_POS_AVI_RATIO, 0);
+            continue;
+        }
+            // break;
+
+        // Run
+        Matrix<> image = createMatrix(frame);
+        lbpGpu.run(image);
+        kmeanGpu.transform(lbpGpu.getCudaFeatures(), labelsGpu);
+
+        // Show result
+        for (auto i = 0U; i < 16; ++i) {
+            auto mat = cv::Mat(labelsGpu.height() / (image.width() / 16), image.width() / 16, CV_8U);
+            for (auto y = 0; y < mat.rows; y++) {
+                for (auto x = 0; x < mat.cols; ++x) {
+                    if (labelsGpu[y * mat.cols + x][0] == i) {
+                        mat.at<unsigned char>(y, x) = 255;
+                    } else {
+                        mat.at<unsigned char>(y, x) = 0;
+                    }
+                }
+            }
+            cv::imshow(std::string("Predicted") + std::to_string(i), mat);
+        }
+        cv::imshow("Original", frame);
+        escapePressed = cv::waitKey(30) == 27;
+    }
+}
+
+void handleCamera() {
+    throw std::logic_error("Not implemented yet!");
+    cv::Mat frame;
+    //--- INITIALIZE VIDEOCAPTURE
+    cv::VideoCapture cap;
+    // open the default camera using default API
+    // cap.open(0);
+    // OR advance usage: select any API backend
+    int deviceID = 0;             // 0 = open default camera
+    int apiID = cv::CAP_ANY;      // 0 = autodetect default API
+    // open selected camera using selected API
+    cap.open(deviceID, apiID);
+    // check if we succeeded
+    if (!cap.isOpened()) {
+        throw std::logic_error("Unable to open default camera !");
+    }
+    //--- GRAB AND WRITE LOOP
+    std::cout << "Start grabbing" << std::endl
+         << "Press any key to terminate" << std::endl;
+    for (;;)
+    {
+        // wait for a new frame from camera and store it into 'frame'
+        cap.read(frame);
+        // check if we succeeded
+        if (frame.empty()) {
+            std::cerr << "ERROR! blank frame grabbed\n";
+            break;
+        }
+        // show live and wait for a key with timeout long enough to show images
+        imshow("Live", frame);
+        if (cv::waitKey(5) >= 0)
+            break;
+    }
+    // the camera will be deinitialized automatically in VideoCapture destructor
 }
