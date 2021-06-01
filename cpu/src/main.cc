@@ -3,11 +3,15 @@
 #include <kmeans/KmeansTransform.hh>
 #include "main.hh"
 #include "image/matrix.hh"
+#include "benchmark/Bench.hh"
+
 
 namespace po = boost::program_options;
 
 int main(int argc, char** argv)
 {
+    auto test1 = "test CPU";
+    bench::Bench::start(test1);
     try {
         auto const& desc = define_options();
         auto const& vm = parse_options(desc, argc, argv);
@@ -16,6 +20,8 @@ int main(int argc, char** argv)
         std::cerr << "[ERROR] " << e.what() << std::endl;
         return 2;
     }
+    bench::Bench::end(test1);
+    bench::Bench::print(std::cerr, test1, "milliseconds");
     return 0;
 }
 
