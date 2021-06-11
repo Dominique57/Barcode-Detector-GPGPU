@@ -14,7 +14,7 @@ add_library(SOURCE_LIB_CUDA SHARED
     kmeans/kmeansTransformGpu.cu kmeans/kmeansTransformGpu.hh
     )
 target_compile_features(SOURCE_LIB_CUDA PRIVATE
-    cxx_std_17
+    cuda_std_17
     )
 target_compile_options(SOURCE_LIB_CUDA PRIVATE
     "-Wall"
