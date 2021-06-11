@@ -51,10 +51,10 @@ int run(const po::options_description& desc, const po::variables_map& vm)
         return 1;
     }
 
-    auto image_path = vm["image"].as<std::string>().c_str();
-    executeAlgorithm(image_path);
-    return 0;
-    /*
+    // This should be mainly used for benchmarking
+    // auto image_path = vm["image"].as<std::string>().c_str();
+    // executeAlgorithm(image_path);
+
     try {
         if (!vm["camera"].empty())
             handleCamera();
@@ -66,6 +66,5 @@ int run(const po::options_description& desc, const po::variables_map& vm)
         std::cerr << "[FATAL ERROR]: " << e.what() << std::endl;
         return 2;
     }
-    */
     return 0;
 }
