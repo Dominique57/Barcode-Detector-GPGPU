@@ -10,7 +10,7 @@ public:
               features_(1 << NEIGHS_COUNT,
                         (width / SLICE_SIZE) * (height / SLICE_SIZE))
     {
-        if (width % SLICE_SIZE != 0 || height % 16 != 0)
+        if (width % SLICE_SIZE != 0 || height % SLICE_SIZE != 0)
             throw std::invalid_argument("Given format is not slice-zable !");
     }
 

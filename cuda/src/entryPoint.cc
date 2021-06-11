@@ -192,7 +192,6 @@ void handleVideo(const std::string &videoPath) {
             cap.set(cv::CAP_PROP_POS_AVI_RATIO, 0);
             continue;
         }
-            // break;
 
         // Run
         Matrix<> image = createMatrix(frame);
