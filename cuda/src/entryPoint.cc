@@ -1,32 +1,19 @@
 #include <chrono>
-#include <image/matrix.hh>
 #include <lbp/lbpCpu.hh>
 #include <lbp/lbpGpu.hh>
 #include <iostream>
-#include <kmeans/kmeansTransformGpu.hh>
-#include <kmeans/KmeansTransform.hh>
+#include <knn/knnGpu.hh>
+#include <knn/knnCpu.hh>
 #include "entryPoint.hh"
 
 #include "my_opencv/wrapper.hh"
-
-
-static inline Matrix<> createMatrix(const cv::Mat &mat) {
-    auto res = Matrix<>(mat.cols, mat.rows);
-    for (auto y = 0U; y < res.height(); ++y) {
-        for (auto x = 0U; x < res.width(); ++x) {
-            // res[y][x] = mat.at<unsigned char>((int)y, (int)x);
-            res[y][x] = mat.at<float>((int)y, (int)x);
-        }
-    }
-    return res;
-}
 
 void executeAlgorithm(const std::string &path) {
     cv::Mat_<uchar> image = cv::imread(path, cv::IMREAD_GRAYSCALE);
 
     // lbp on cpu
     auto lbpCpu = LbpCpu(image.cols, image.rows);
-    auto kmeansCpu = KmeansTransform("kmeans.database", 16, 256);
+    auto kmeansCpu = KnnCpu("kmeans.database", 16, 256);
     auto labelsCpu = std::vector<uchar>(lbpCpu.numberOfPatches());
 
     std::cout << "Running CPU (1core|1thread)" << std::endl;
@@ -42,7 +29,7 @@ void executeAlgorithm(const std::string &path) {
 
     // lbp on Gpu
     auto lbpGpu = LbpGpu(image.cols, image.rows);
-    auto kmeanGpu = KmeansTransformGpu("kmeans.database", 16, 256);
+    auto kmeanGpu = KnnGpu("kmeans.database", 16, 256);
     // auto labelsGpu = Matrix<unsigned char>(1, lbpGpu.numberOfPatches());
     auto labelsGpu = std::vector<uchar>(lbpCpu.numberOfPatches());
 
@@ -149,7 +136,7 @@ void handleImage(const std::string &imagePath) {
 
     // lbp on Gpu
     auto lbpGpu = LbpGpu(image.cols, image.rows);
-    auto kmeanGpu = KmeansTransformGpu("kmeans.database", 16, 256);
+    auto kmeanGpu = KnnGpu("kmeans.database", 16, 256);
     auto labelsGpu = std::vector<uchar>(lbpGpu.numberOfPatches());
 
     // Run
@@ -175,7 +162,7 @@ void handleVideo(const std::string &videoPath) {
         (unsigned)(cap.get(cv::CAP_PROP_FRAME_WIDTH)),
         (unsigned)(cap.get(cv::CAP_PROP_FRAME_HEIGHT))
     );
-    auto kmeanGpu = KmeansTransformGpu("kmeans.database", 16, 256);
+    auto kmeanGpu = KnnGpu("kmeans.database", 16, 256);
     auto labelsGpu = std::vector<uchar>(lbpGpu.numberOfPatches());
 
     cv::Mat frame;

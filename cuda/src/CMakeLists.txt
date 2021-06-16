@@ -13,7 +13,7 @@ add_library(SOURCE_LIB_CUDA SHARED
     image/splice.cu image/splice.hh
     image/matrix.cu image/matrix.hh
     lbp/lbpGpu.cu lbp/lbpCpu.cc
-    kmeans/kmeansTransformGpu.cu kmeans/kmeansTransformGpu.hh
+    knn/knnGpu.cu knn/knnGpu.hh
     )
 target_compile_features(SOURCE_LIB_CUDA PRIVATE
     cuda_std_17
@@ -40,7 +40,7 @@ add_library(SOURCE_LIB STATIC
     entryPoint.cc entryPoint.hh
     cuda/mycuda.hh
 
-    kmeans/KmeansTransform.cc kmeans/KmeansTransform.hh
+    knn/knnCpu.cc knn/knnCpu.hh
 
     lbp/lbpAlgorithm.hh
     lbp/lbpCpu.hh lbp/lbpGpu.hh

@@ -1,5 +1,4 @@
 #include <stdexcept>
-#include <sstream>
 #include <iostream>
 #include "matrix.hh"
 

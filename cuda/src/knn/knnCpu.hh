@@ -7,18 +7,18 @@
 #include <image/matrix.hh>
 #include "my_opencv/wrapper.hh"
 
-class KmeansTransform {
+class KnnCpu {
 public:
-    KmeansTransform(const std::string &path, unsigned nbClusters, unsigned clusterDim)
+    KnnCpu(const std::string &path, unsigned nbClusters, unsigned clusterDim)
             : centroids_(clusterDim, nbClusters),
               nbClusters_(nbClusters),
               clusterDim_(clusterDim) {
         Matrix<>::readMatrix(path, centroids_);
     }
 
-    KmeansTransform(KmeansTransform &kmeans) = delete;
-    KmeansTransform(KmeansTransform &&kmeans) = delete;
-    void operator=(KmeansTransform &kmeans) = delete;
+    KnnCpu(const KnnCpu &kmeans) = delete;
+    KnnCpu(const KnnCpu &&kmeans) = delete;
+    void operator=(const KnnCpu &kmeans) = delete;
 
     void transform(const cv::Mat_<float> &features, std::vector<uchar> &labels) const;
 

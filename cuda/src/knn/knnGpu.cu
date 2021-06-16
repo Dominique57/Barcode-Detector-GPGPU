@@ -1,6 +1,6 @@
-#include "kmeansTransformGpu.hh"
+#include "knnGpu.hh"
 
-KmeansTransformGpu::KmeansTransformGpu(const std::string &path, unsigned int nbClusters, unsigned int clusterDim)
+KnnGpu::KnnGpu(const std::string &path, unsigned int nbClusters, unsigned int clusterDim)
         : centroids_(clusterDim, nbClusters),
           cudaCentroids_(clusterDim, nbClusters, nullptr),
           nbClusters_(nbClusters),
@@ -11,7 +11,7 @@ KmeansTransformGpu::KmeansTransformGpu(const std::string &path, unsigned int nbC
     cudaMemcpy(cudaCentroids_.getData(), centroids_.getData(), centroidSize, cudaMemcpyHostToDevice);
 }
 
-KmeansTransformGpu::~KmeansTransformGpu() {
+KnnGpu::~KnnGpu() {
     cudaFree(cudaCentroids_.getData());
 }
 
@@ -53,7 +53,7 @@ CUDA_GLOBAL void execTransform(const Matrix<float> cudaFeatures, Matrix<> cudaCe
     cudaLabels[index][0] = cluster;
 }
 
-void KmeansTransformGpu::transform(const Matrix<float> &cudaFeatures, std::vector<uchar> &labels) {
+void KnnGpu::transform(const Matrix<float> &cudaFeatures, std::vector<uchar> &labels) {
     if (cudaFeatures.height() > labels.size())
         throw std::invalid_argument("Invalid label buffer: to small!");
 

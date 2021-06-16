@@ -1,7 +1,7 @@
 #include <iostream>
-#include "KmeansTransform.hh"
+#include "knnCpu.hh"
 
-void KmeansTransform::transform(const cv::Mat_<float> &features, std::vector<uchar> &labels) const {
+void KnnCpu::transform(const cv::Mat_<float> &features, std::vector<uchar> &labels) const {
     if (features.cols != (int)clusterDim_)
         throw std::invalid_argument("Features have incorrect dimension !");
     if (features.rows > (int)labels.size())
@@ -23,7 +23,7 @@ void KmeansTransform::transform(const cv::Mat_<float> &features, std::vector<uch
     }
 }
 
-float KmeansTransform::computeDistance(unsigned clusterIndex, const float* feature) const {
+float KnnCpu::computeDistance(unsigned clusterIndex, const float* feature) const {
     float sum = 0;
     for (auto i = 0U; i < clusterDim_; ++i) {
         float sub = feature[i] - centroids_[clusterIndex][i];
