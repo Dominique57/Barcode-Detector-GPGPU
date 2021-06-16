@@ -11,12 +11,12 @@ public:
 
     ~LbpGpu();
 
-    void run(Matrix<> &grayImage) override;
+    void run(cv::Mat_<uchar> &grayImage) override;
 
-    Matrix<> &getFeatures() override;
-    Matrix<> &getCudaFeatures();
+    cv::Mat_<float> &getFeatures() override;
+    Matrix<> &getCudaFeatures() { return cudaFeatures_; }
 
 private:
-    Matrix<> cudaImage_;
+    Matrix<uchar> cudaImage_;
     Matrix<> cudaFeatures_;
 };

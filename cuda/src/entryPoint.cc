@@ -1,25 +1,20 @@
 #include <chrono>
-#include <image/matrix.hh>
 #include <lbp/lbpCpu.hh>
 #include <lbp/lbpGpu.hh>
 #include <iostream>
-#include <kmeans/kmeansTransformGpu.hh>
-#include <kmeans/KmeansTransform.hh>
+#include <knn/knnGpu.hh>
+#include <knn/knnCpu.hh>
 #include "entryPoint.hh"
 
-#include <opencv2/highgui.hpp>
-#include <opencv2/videoio.hpp>
-#include <opencv2/imgcodecs.hpp>
-#include <opencv2/imgproc.hpp>
+#include "my_opencv/wrapper.hh"
 
 void executeAlgorithm(const std::string &path) {
-    auto image = Matrix<>(4032U, 3024U);
-    Matrix<>::readMatrix(path, image);
+    cv::Mat_<uchar> image = cv::imread(path, cv::IMREAD_GRAYSCALE);
 
     // lbp on cpu
-    auto lbpCpu = LbpCpu(image.width(), image.height());
-    auto kmeansCpu = KmeansTransform("kmeans.database", 16, 256);
-    auto labelsCpu = Matrix<unsigned char>(1, lbpCpu.numberOfPatches());
+    auto lbpCpu = LbpCpu(image.cols, image.rows);
+    auto kmeansCpu = KnnCpu("kmeans.database", 16, 256);
+    auto labelsCpu = std::vector<uchar>(lbpCpu.numberOfPatches());
 
     std::cout << "Running CPU (1core|1thread)" << std::endl;
     auto start = std::chrono::system_clock::now();
@@ -32,11 +27,11 @@ void executeAlgorithm(const std::string &path) {
     auto elapsedS = std::chrono::duration_cast<std::chrono::seconds>(end - start);
     std::cout << elapsedMs.count() << "ms " << elapsedS.count() << "seconds" << std::endl;
 
-
     // lbp on Gpu
-    auto lbpGpu = LbpGpu(image.width(), image.height());
-    auto kmeanGpu = KmeansTransformGpu("kmeans.database", 16, 256);
-    auto labelsGpu = Matrix<unsigned char>(1, lbpGpu.numberOfPatches());
+    auto lbpGpu = LbpGpu(image.cols, image.rows);
+    auto kmeanGpu = KnnGpu("kmeans.database", 16, 256);
+    // auto labelsGpu = Matrix<unsigned char>(1, lbpGpu.numberOfPatches());
+    auto labelsGpu = std::vector<uchar>(lbpCpu.numberOfPatches());
 
     std::cout << "Running GPU (1050ti)" << std::endl;
     auto start2 = std::chrono::system_clock::now();
@@ -44,6 +39,14 @@ void executeAlgorithm(const std::string &path) {
     for (auto i =  0U; i < 100; ++i) {
         lbpGpu.run(image);
         kmeanGpu.transform(lbpGpu.getCudaFeatures(), labelsGpu);
+
+        for (auto j = 0U; j < labelsCpu.size(); ++j) {
+            if (labelsCpu[j] != labelsGpu[j]) {
+                std::cerr << "i:" << i << " j:" << j << " => (cpu)"
+                    << (int)labelsCpu[j] << " <> (gpu)" << (int)labelsGpu[j] << std::endl;
+                throw std::logic_error("Program failed: predicted labels are different!");
+            }
+        }
     }
 
     auto end2 = std::chrono::system_clock::now();
@@ -53,12 +56,13 @@ void executeAlgorithm(const std::string &path) {
 
     // Check features
     std::cout << "Checking if cpu and gpu histogram matrix are the same" << std::endl;
-    auto& cpuFeatures = lbpCpu.getFeatures();
-    auto& gpuFeatures = lbpGpu.getFeatures();
-    for (auto y = 0U; y < cpuFeatures.height(); ++y) {
-        for (auto x = 0U; x < cpuFeatures.width(); ++x) {
+    auto &cpuFeatures = lbpCpu.getFeatures();
+    auto &gpuFeatures = lbpGpu.getFeatures();
+    for (auto y = 0; y < cpuFeatures.rows; ++y) {
+        for (auto x = 0; x < cpuFeatures.cols; ++x) {
             if (cpuFeatures[y][x] != gpuFeatures[y][x]) {
-                std::cerr << "y:" << y << " x:" << x << " => " << cpuFeatures[y][x] << " <> " << gpuFeatures[y][x] << std::endl;
+                std::cerr << "y:" << y << " x:" << x << " => (cpu)" << cpuFeatures[y][x]
+                << " <> (gpu)" << gpuFeatures[y][x] << std::endl;
                 throw std::logic_error("Program failed: histogram matrix's are different !");
             }
         }
@@ -66,9 +70,9 @@ void executeAlgorithm(const std::string &path) {
 
     // Check labels
     std::cout << "Checking if cpu and gpu predicted labels are the same" << std::endl;
-    for (auto i = 0U; i < labelsCpu.height(); ++i) {
-        if (labelsCpu[i][0] != labelsGpu[i][0]) {
-            std::cerr << "i:" << i << " => " << (int)labelsCpu[i][0] << " <> " << (int)labelsGpu[i][0] << std::endl;
+    for (auto i = 0U; i < labelsCpu.size(); ++i) {
+        if (labelsCpu[i] != labelsGpu[i]) {
+            std::cerr << "i:" << i << " => (cpu)" << (int)labelsCpu[i] << " <> (gpu)" << (int)labelsGpu[i] << std::endl;
             throw std::logic_error("Program failed: predicted labels are different!");
         }
     }
@@ -76,28 +80,29 @@ void executeAlgorithm(const std::string &path) {
     // Show image
     std::cout << "Showing predicted matrix as an image" << std::endl;
     {
-        auto mat = cv::Mat(labelsGpu.height() / (image.width() / 16), image.width() / 16, CV_8UC3, cv::Scalar(0, 0, 0));
+        auto mat = cv::Mat(labelsGpu.size() / (image.cols / SLICE_SIZE), image.cols / SLICE_SIZE,
+                           CV_8UC3, cv::Scalar(0, 0, 0));
         cv::Vec3b random_lut[16] = {
-                {84,  0,   255},
-                {255, 0,   23},
-                {0,   116, 255},
-                {255, 100, 0},
-                {184, 0,   255},
-                {255, 200, 0},
-                {255, 0,   124},
-                {0,   15,  255},
-                {255, 0,   0},
-                {108, 255, 0},
-                {0,   255, 192},
-                {0,   255, 92},
-                {255, 0,   224},
-                {7,   255, 0},
-                {208, 255, 0},
-                {0,   216, 255}
+            {84,  0,   255},
+            {255, 0,   23},
+            {0,   116, 255},
+            {255, 100, 0},
+            {184, 0,   255},
+            {255, 200, 0},
+            {255, 0,   124},
+            {0,   15,  255},
+            {255, 0,   0},
+            {108, 255, 0},
+            {0,   255, 192},
+            {0,   255, 92},
+            {255, 0,   224},
+            {7,   255, 0},
+            {208, 255, 0},
+            {0,   216, 255}
         };
         for (auto y = 0; y < mat.rows; y++) {
             for (auto x = 0; x < mat.cols; ++x) {
-                cv::Vec3b color = random_lut[labelsGpu[y * mat.cols + x][0]];
+                cv::Vec3b color = random_lut[labelsGpu[y * mat.cols + x]];
                 mat.at<cv::Vec3b>(y, x) = cv::Vec3b(color[2], color[1], color[0]);
             }
         }
@@ -107,63 +112,40 @@ void executeAlgorithm(const std::string &path) {
 
     // Show specific class
     {
-        auto mat = cv::Mat(labelsGpu.height() / (image.width() / 16), image.width() / 16, CV_8U);
+        auto mat = cv::Mat(labelsGpu.size() / (image.cols / SLICE_SIZE), image.cols / SLICE_SIZE, CV_8U);
         for (auto y = 0; y < mat.rows; y++) {
             for (auto x = 0; x < mat.cols; ++x) {
-                if (labelsGpu[y * mat.cols + x][0] == 15) {
-                    mat.at<unsigned char>(y, x) = 255;
-                } else {
-                    mat.at<unsigned char>(y, x) = 0;
-                }
+                if (labelsGpu[y * mat.cols + x] == 1 || labelsGpu[y * mat.cols + x] == 12)
+                    mat.at<uchar>(y, x) = 255;
+                else
+                    mat.at<uchar>(y, x) = 0;
             }
         }
-        cv::imshow("test", mat * 16);
+        cv::imshow("test", mat);
         cv::waitKey(0);
     }
 }
 
-
-static inline Matrix<> createMatrix(const cv::Mat &mat) {
-    auto res = Matrix<>(mat.cols, mat.rows);
-    for (auto y = 0U; y < res.height(); ++y) {
-        for (auto x = 0U; x < res.width(); ++x) {
-            res[y][x] = mat.at<unsigned char>((int)y, (int)x);
-        }
-    }
-    return res;
-}
-
 void handleImage(const std::string &imagePath) {
-    cv::Mat cvImage = cv::imread(imagePath, cv::IMREAD_GRAYSCALE);
-    Matrix<> image = createMatrix(cvImage);
+    cv::Mat_<uchar> image = cv::imread(imagePath, cv::IMREAD_GRAYSCALE);
 
     // Show input image
     cv::Mat showCvImage;
-    cv::resize(cvImage, showCvImage, cv::Size_(1300, 800));
-    cv::imshow("test", showCvImage);
-    cv::waitKey(0);
+    cv::resize(image, showCvImage, cv::Size(800, image.rows * 800 / image.cols));
+    cv::imshow("Original Image", showCvImage);
 
     // lbp on Gpu
-    auto lbpGpu = LbpGpu(image.width(), image.height());
-    auto kmeanGpu = KmeansTransformGpu("kmeans.database", 16, 256);
-    auto labelsGpu = Matrix<unsigned char>(1, lbpGpu.numberOfPatches());
+    auto lbpGpu = LbpGpu(image.cols, image.rows);
+    auto kmeanGpu = KnnGpu("kmeans.database", 16, 256);
+    auto labelsGpu = std::vector<uchar>(lbpGpu.numberOfPatches());
 
     // Run
     lbpGpu.run(image);
     kmeanGpu.transform(lbpGpu.getCudaFeatures(), labelsGpu);
 
     // Show result
-    auto mat = cv::Mat(labelsGpu.height() / (image.width() / 16), image.width() / 16, CV_8U);
-    for (auto y = 0; y < mat.rows; y++) {
-        for (auto x = 0; x < mat.cols; ++x) {
-            if (labelsGpu[y * mat.cols + x][0] == 15) {
-                mat.at<unsigned char>(y, x) = 255;
-            } else {
-                mat.at<unsigned char>(y, x) = 0;
-            }
-        }
-    }
-    cv::imshow("test", mat);
+    auto predictedLabels = my_cv::rebuildImageFromVector(labelsGpu, image.cols / SLICE_SIZE);
+    cv::imshow("Predicted image", predictedLabels);
     cv::waitKey(0);
 }
 
@@ -171,7 +153,7 @@ void handleVideo(const std::string &videoPath) {
     cv::VideoCapture cap(videoPath);
     if (!cap.isOpened())
         throw std::invalid_argument("Cannot open the video file !");
-    // double fps = cap.get(cv::CAP_PROP_FPS); //get the frames per seconds of the video
+
     namedWindow("Original", cv::WINDOW_AUTOSIZE); //create a window called "MyVideo"
     namedWindow("Predicted", cv::WINDOW_AUTOSIZE); //create a window called "MyVideo"
 
@@ -180,38 +162,27 @@ void handleVideo(const std::string &videoPath) {
         (unsigned)(cap.get(cv::CAP_PROP_FRAME_WIDTH)),
         (unsigned)(cap.get(cv::CAP_PROP_FRAME_HEIGHT))
     );
-    auto kmeanGpu = KmeansTransformGpu("kmeans.database", 16, 256);
-    auto labelsGpu = Matrix<unsigned char>(1, lbpGpu.numberOfPatches());
+    auto kmeanGpu = KnnGpu("kmeans.database", 16, 256);
+    auto labelsGpu = std::vector<uchar>(lbpGpu.numberOfPatches());
 
     cv::Mat frame;
-    cv::Mat Gray_frame;
     bool escapePressed = false;
-    while (!escapePressed)
-    {
+    while (!escapePressed) {
         if (!cap.read(frame)) { // video ended
             cap.set(cv::CAP_PROP_POS_AVI_RATIO, 0);
             continue;
         }
 
         // Run
-        Matrix<> image = createMatrix(frame);
-        lbpGpu.run(image);
+        cv::Mat_<uchar> grayImage;
+        cv::cvtColor(frame, grayImage, cv::COLOR_BGR2GRAY);
+        lbpGpu.run(grayImage);
         kmeanGpu.transform(lbpGpu.getCudaFeatures(), labelsGpu);
 
         // Show result
-        for (auto i = 0U; i < 16; ++i) {
-            auto mat = cv::Mat(labelsGpu.height() / (image.width() / 16), image.width() / 16, CV_8U);
-            for (auto y = 0; y < mat.rows; y++) {
-                for (auto x = 0; x < mat.cols; ++x) {
-                    if (labelsGpu[y * mat.cols + x][0] == i) {
-                        mat.at<unsigned char>(y, x) = 255;
-                    } else {
-                        mat.at<unsigned char>(y, x) = 0;
-                    }
-                }
-            }
-            cv::imshow(std::string("Predicted") + std::to_string(i), mat);
-        }
+        auto predictedLabels = my_cv::rebuildImageFromVector(
+            labelsGpu, grayImage.cols / SLICE_SIZE);
+        cv::imshow("Predicted", predictedLabels);
         cv::imshow("Original", frame);
         escapePressed = cv::waitKey(30) == 27;
     }
