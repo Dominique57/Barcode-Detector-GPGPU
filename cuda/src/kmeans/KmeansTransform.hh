@@ -5,6 +5,7 @@
 #include <string>
 #include <cmath>
 #include <image/matrix.hh>
+#include "my_opencv/wrapper.hh"
 
 class KmeansTransform {
 public:
@@ -19,7 +20,7 @@ public:
     KmeansTransform(KmeansTransform &&kmeans) = delete;
     void operator=(KmeansTransform &kmeans) = delete;
 
-    void transform(const Matrix<> &features, Matrix<unsigned char>& labels) const;
+    void transform(const cv::Mat_<float> &features, std::vector<uchar> &labels) const;
 
 protected:
     float computeDistance(unsigned clusterIndex, const float* feature) const;

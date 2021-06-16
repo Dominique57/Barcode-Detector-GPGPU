@@ -35,17 +35,16 @@ CUDA_GLOBAL void execTransform(const Matrix<float> cudaFeatures, Matrix<> cudaCe
     for (auto i = 0U; i < 256; ++i)
         feature[i] = cudaFeatures[index][i];
 
-    // Copy centroids in shared memory
-    extern __shared__ float centroids[];
-    for (auto i = threadIdx.x; i < cudaCentroids.width() * cudaCentroids.height(); i += blockDim.x)
-        centroids[i] = cudaCentroids.getData()[i];
-
     // Get smallest euclidian distance cluster
     float dist = INFINITY;
     unsigned char cluster = 0;
     for (auto j = 0U; j < cudaCentroids.height(); ++j) {
         // float curDist = execComputeDistance(centroids + (j * cudaCentroids.width()), cudaCentroids.width(), cudaFeatures[index]);
-        float curDist = execComputeDistance(centroids + (j * cudaCentroids.width()), cudaCentroids.width(), feature);
+        float curDist = execComputeDistance(
+            cudaCentroids.getData() + (j * cudaCentroids.width()),
+            cudaCentroids.width(),
+            feature
+        );
         if (curDist < dist) {
             dist = curDist;
             cluster = j;
@@ -54,14 +53,14 @@ CUDA_GLOBAL void execTransform(const Matrix<float> cudaFeatures, Matrix<> cudaCe
     cudaLabels[index][0] = cluster;
 }
 
-void KmeansTransformGpu::transform(const Matrix<float> &cudaFeatures, Matrix<unsigned char> &labels) {
+void KmeansTransformGpu::transform(const Matrix<float> &cudaFeatures, std::vector<uchar> &labels) {
+    if (cudaFeatures.height() > labels.size())
+        throw std::invalid_argument("Invalid label buffer: to small!");
+
     // Create cuda label buffer
     Matrix<unsigned char> cudaLabels(1, cudaFeatures.height(), nullptr);
-    unsigned labelSize = cudaLabels.width() * cudaLabels.height() * sizeof(unsigned char);
+    unsigned labelSize = cudaLabels.width() * cudaLabels.height() * sizeof(uchar);
     cudaMalloc(&(cudaLabels.getData()), labelSize);
-
-    if (cudaFeatures.height() > labels.height())
-        throw std::invalid_argument("FIXME: need to resize cuda buffer!");
 
     // Compute Kernel dimensions
     unsigned blockWidth = 256;
@@ -74,6 +73,6 @@ void KmeansTransformGpu::transform(const Matrix<float> &cudaFeatures, Matrix<uns
     execTransform<<<gridWidth, blockWidth, centroidSize>>>(cudaFeatures, cudaCentroids_, cudaLabels);
 
     // Copy result in memory
-    cudaMemcpy(labels.getData(), cudaLabels.getData(), labelSize, cudaMemcpyDeviceToHost);
+    cudaMemcpy(labels.data(), cudaLabels.getData(), labelSize, cudaMemcpyDeviceToHost);
     cudaFree(cudaLabels.getData());
 }

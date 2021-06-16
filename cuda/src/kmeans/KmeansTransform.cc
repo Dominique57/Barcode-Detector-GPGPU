@@ -1,13 +1,13 @@
 #include <iostream>
 #include "KmeansTransform.hh"
 
-void KmeansTransform::transform(const Matrix<> &features, Matrix<unsigned char> &labels) const {
-    if (features.width() != clusterDim_)
+void KmeansTransform::transform(const cv::Mat_<float> &features, std::vector<uchar> &labels) const {
+    if (features.cols != (int)clusterDim_)
         throw std::invalid_argument("Features have incorrect dimension !");
-    if (features.height() > labels.height())
+    if (features.rows > (int)labels.size())
         throw std::invalid_argument("Result vector is not compatible with feature count !");
 
-    for (auto i = 0U; i < features.height(); ++i) {
+    for (auto i = 0; i < features.rows; ++i) {
         // Get smallest euclidian distance cluster
         float dist = INFINITY;
         unsigned char cluster = 0;
@@ -19,7 +19,7 @@ void KmeansTransform::transform(const Matrix<> &features, Matrix<unsigned char> 
             }
         }
 
-        labels[i][0] = cluster;
+        labels[i] = cluster;
     }
 }
 

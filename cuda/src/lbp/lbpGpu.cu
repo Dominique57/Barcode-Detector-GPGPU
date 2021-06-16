@@ -6,10 +6,12 @@ LbpGpu::LbpGpu(unsigned int width, unsigned int height)
           cudaFeatures_(1 << NEIGHS_COUNT,
                         (width / SLICE_SIZE) * (height / SLICE_SIZE),
                         nullptr) {
-    unsigned imgSize = height * width * sizeof(Matrix<>::data_t);
-    cudaMalloc(&(cudaImage_.getData()), imgSize);
-    unsigned featureSize = cudaFeatures_.height() * cudaFeatures_.width() * sizeof(Matrix<>::data_t);
-    cudaMalloc(&(cudaFeatures_.getData()), featureSize);
+    unsigned imgLineSize = cudaImage_.width() * sizeof(uchar);
+    cudaMallocPitch(&(cudaImage_.getData()), &(cudaImage_.getStride()),
+                    imgLineSize, cudaImage_.height());
+    unsigned featureLineSize = cudaFeatures_.width() * sizeof(float);
+    cudaMallocPitch(&(cudaFeatures_.getData()), &(cudaFeatures_.getStride()),
+                    featureLineSize, cudaFeatures_.height());
 }
 
 LbpGpu::~LbpGpu() {
@@ -17,7 +19,7 @@ LbpGpu::~LbpGpu() {
     cudaFree(cudaFeatures_.getData());
 }
 
-static CUDA_GLOBAL void executeAddLocalPatternsGpu(Matrix<> resFeatures, Matrix<> image) {
+static CUDA_GLOBAL void executeAddLocalPatternsGpu(Matrix<float> resFeatures, Matrix<uchar> image) {
     unsigned sliceIndex = blockIdx.y * gridDim.x + blockIdx.x;
     // Slice x/y pixel start
     unsigned y_start = blockIdx.y * 16;
@@ -50,31 +52,31 @@ static CUDA_GLOBAL void executeAddLocalPatternsGpu(Matrix<> resFeatures, Matrix<
     atomicAdd(resFeatures[sliceIndex] + texton, 1);
 }
 
-
-void LbpGpu::run(Matrix<> &grayImage) {
+void LbpGpu::run(cv::Mat_<uchar> &grayImage) {
     LbpAlgorithm::run(grayImage);
-    // Create kernel dimensions
+
+    // Kernel dimensions (width * height) / (slice * slice)
     auto dimGrid = dim3(width_ / SLICE_SIZE, height_ / SLICE_SIZE);
     auto dimBlock = dim3(SLICE_SIZE, SLICE_SIZE);
 
     // Copy image
-    unsigned imgSize = height_ * width_ * sizeof(Matrix<>::data_t);
-    cudaMemcpy(cudaImage_.getData(), grayImage.getData(), imgSize, cudaMemcpyHostToDevice);
+    cudaMemcpy2D(
+        cudaImage_.getData(), cudaImage_.getStride(), grayImage.data, grayImage.step.p[0],
+        cudaImage_.width() * sizeof(uchar), cudaImage_.height(), cudaMemcpyHostToDevice
+    );
+    // Reset histogram memory
+    cudaMemset2D(cudaFeatures_.getData(), cudaFeatures_.getStride(), 0,
+                 cudaFeatures_.width() * sizeof(float), cudaFeatures_.height());
 
-    // Reset features histogram
-    unsigned featureSize = (1 << NEIGHS_COUNT) * (dimGrid.x * dimGrid.y) * sizeof(Matrix<>::data_t);
-    cudaMemset(cudaFeatures_.getData(), 0, featureSize);
-
-    // Execute kernel
     executeAddLocalPatternsGpu<<<dimGrid, dimBlock>>>(cudaFeatures_, cudaImage_);
 }
 
-Matrix<> &LbpGpu::getFeatures() {
-    unsigned featureSize = (1 << NEIGHS_COUNT) * (width_ / SLICE_SIZE * height_ / SLICE_SIZE) * sizeof(Matrix<>::data_t);
-    cudaMemcpy(features_.getData(), cudaFeatures_.getData(), featureSize, cudaMemcpyDeviceToHost);
+cv::Mat_<float> &LbpGpu::getFeatures() {
+    cudaMemcpy2D(
+        features_.data, features_.step.p[0], // src
+        cudaFeatures_.getData(), cudaFeatures_.getStride(), // dst
+        cudaFeatures_.width() * sizeof(float ), cudaFeatures_.height(), // width(bytes), lines
+        cudaMemcpyDeviceToHost
+    );
     return features_;
-}
-
-Matrix<> &LbpGpu::getCudaFeatures() {
-    return cudaFeatures_;
 }

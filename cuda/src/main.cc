@@ -27,6 +27,8 @@ po::options_description define_options()
             ("video,v", po::value<std::string>(), "input video path");
     desc.add_options()
             ("camera,c", "use default system camera");
+    desc.add_options()
+        ("test,t", "run cpu and gpu implementations then check results equality");
     return desc;
 }
 
@@ -46,14 +48,10 @@ int run(const po::options_description& desc, const po::variables_map& vm)
         std::cout << desc << std::endl;
         return 0;
     }
-    if (vm["image"].empty() && vm["video"].empty() && vm["camera"].empty()) {
+    if (vm["image"].empty() && vm["video"].empty() && vm["camera"].empty() && vm["test"].empty()) {
         std::cerr << "No image or video path given !" << std::endl;
         return 1;
     }
-
-    // This should be mainly used for benchmarking
-    // auto image_path = vm["image"].as<std::string>().c_str();
-    // executeAlgorithm(image_path);
 
     try {
         if (!vm["camera"].empty())
@@ -62,6 +60,8 @@ int run(const po::options_description& desc, const po::variables_map& vm)
             handleImage(vm["image"].as<std::string>());
         if (!vm["video"].empty())
             handleVideo(vm["video"].as<std::string>());
+        if (!vm["test"].empty())
+            executeAlgorithm("test.png");
     } catch (std::exception& e) {
         std::cerr << "[FATAL ERROR]: " << e.what() << std::endl;
         return 2;

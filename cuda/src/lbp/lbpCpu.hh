@@ -8,15 +8,13 @@ class LbpCpu : public LbpAlgorithm {
 public:
     LbpCpu(unsigned width, unsigned height);
 
-    void run(Matrix<> &grayImage) override;
-
-    Matrix<> &getFeatures() override;
+    void run(cv::Mat_<uchar> &grayImage) override;
 
 protected:
 
-    void addLocalPatterns(Matrix<> &image);
+    void addLocalPatterns(cv::Mat_<uchar> &image);
 
-    void addSliceTextons(const Splice &splice, unsigned sliceIndex);
+    void addSliceTextons(const cv::Mat_<uchar> &image, int x, int y, unsigned sliceIndex);
 
 private:
 };
