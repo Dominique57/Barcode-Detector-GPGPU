@@ -15,10 +15,10 @@ KnnGpu::~KnnGpu() {
     cudaFree(cudaCentroids_.getData());
 }
 
-CUDA_DEV float execComputeDistance(const float* clusterCentroid, unsigned centroidWith, const float* feature) {
+CUDA_DEV float execComputeDistance(const float* clusterCentroid, unsigned centroidWith, const half* feature) {
     float sum = 0;
     for (auto i = 0U; i < centroidWith; ++i) {
-        float sub = feature[i] - clusterCentroid[i];
+        float sub = __half2float(feature[i]) - clusterCentroid[i];
         sum += sub * sub;
     }
 
@@ -31,17 +31,23 @@ CUDA_GLOBAL void execTransform(const Matrix<float> cudaFeatures, Matrix<> cudaCe
         return;
 
     // Copy current features in local memory
-    float feature[256];
+    half feature[256];
     for (auto i = 0U; i < 256; ++i)
-        feature[i] = cudaFeatures[index][i];
+        feature[i] = __float2half(cudaFeatures[index][i]);
+
+    __shared__ float centroid[256];
 
     // Get smallest euclidian distance cluster
     float dist = INFINITY;
     unsigned char cluster = 0;
     for (auto j = 0U; j < cudaCentroids.height(); ++j) {
+        centroid[threadIdx.x] = cudaCentroids[j][threadIdx.x]; //  coalescing
+        // centroid[threadIdx.x] = constCentroids_[j * 256 + threadIdx.x]; //  coalescing
+        __syncthreads();
         // float curDist = execComputeDistance(centroids + (j * cudaCentroids.width()), cudaCentroids.width(), cudaFeatures[index]);
         float curDist = execComputeDistance(
-            cudaCentroids.getData() + (j * cudaCentroids.width()),
+            // cudaCentroids.getData() + (j * cudaCentroids.width()),
+            centroid,
             cudaCentroids.width(),
             feature
         );
@@ -69,8 +75,7 @@ void KnnGpu::transform(const Matrix<float> &cudaFeatures, std::vector<uchar> &la
         gridWidth += 1;
 
     // Execute kernel
-    unsigned centroidSize = centroids_.width() * centroids_.height() * sizeof(Matrix<>::data_t);
-    execTransform<<<gridWidth, blockWidth, centroidSize>>>(cudaFeatures, cudaCentroids_, cudaLabels);
+    execTransform<<<gridWidth, blockWidth>>>(cudaFeatures, cudaCentroids_, cudaLabels);
 
     // Copy result in memory
     cudaMemcpy(labels.data(), cudaLabels.getData(), labelSize, cudaMemcpyDeviceToHost);
