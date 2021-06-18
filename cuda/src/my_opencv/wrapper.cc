@@ -19,8 +19,9 @@ namespace my_cv {
     }
 }
 
-cv::Rect get_position_barcode(cv::Mat image)
+std::pair<cv::Rect, bool> get_position_barcode(cv::Mat image)
 {
+    using namespace cv;
     GaussianBlur(image, image, Size(3,3), 5);
     threshold(image, image, 150, 255, THRESH_BINARY);
     erode(image, image, getStructuringElement(MORPH_RECT, Size(2,2)), Point(-1,-1), 1);
@@ -28,9 +29,11 @@ cv::Rect get_position_barcode(cv::Mat image)
     std::vector<std::vector<Point> > contours;
     findContours(image, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
 
-    auto index_max = 0;
+    if (contours.empty())
+        return {Rect(), false};
 
-    for (int i = 1; i < contours.size(); i++)
+    auto index_max = 0U;
+    for (auto i = 1U; i < contours.size(); i++)
     {
         if (contours[i].size() > contours[index_max].size())
         {
@@ -47,5 +50,5 @@ cv::Rect get_position_barcode(cv::Mat image)
     boundRect.width *= 16;
     boundRect.height *= 16;
 
-    return boundRect;
+    return {boundRect, true};
 }

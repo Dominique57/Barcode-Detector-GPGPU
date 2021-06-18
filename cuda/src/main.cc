@@ -53,18 +53,13 @@ int run(const po::options_description& desc, const po::variables_map& vm)
         return 1;
     }
 
-    try {
-        if (!vm["camera"].empty())
-            handleCamera();
-        if (!vm["image"].empty())
-            handleImage(vm["image"].as<std::string>());
-        if (!vm["video"].empty())
-            handleVideo(vm["video"].as<std::string>());
-        if (!vm["test"].empty())
-            executeAlgorithm("test.png");
-    } catch (std::exception& e) {
-        std::cerr << "[FATAL ERROR]: " << e.what() << std::endl;
-        return 2;
-    }
+    if (!vm["camera"].empty())
+        handleCamera();
+    if (!vm["image"].empty())
+        handleImage(vm["image"].as<std::string>());
+    if (!vm["video"].empty())
+        handleVideo(vm["video"].as<std::string>());
+    if (!vm["test"].empty())
+        executeAlgorithm("test.png");
     return 0;
 }
