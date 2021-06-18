@@ -145,7 +145,11 @@ void handleImage(const std::string &imagePath) {
 
     // Show result
     auto predictedLabels = my_cv::rebuildImageFromVector(labelsGpu, image.cols / SLICE_SIZE);
-    cv::imshow("Predicted image", predictedLabels);
+    cv::Rect barcode_rect = get_position_barcode(predictedLabels);
+    cv::Mat res_image = showCvImage.clone();
+    cv::rectangle(res_image, boundRect, cv::Scalar(255, 0, 255), 5);
+    
+    cv::imshow("Predicted position of code bar", res_image);
     cv::waitKey(0);
 }
 
