@@ -3,6 +3,7 @@
 #include <cstdio>
 
 #ifdef __CUDACC__
+#include <cuda_fp16.h>
 #  define CUDA_HOSTDEV __host__ __device__
 #  define CUDA_HOST __host__
 #  define CUDA_DEV __device__

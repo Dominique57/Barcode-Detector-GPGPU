@@ -10,9 +10,11 @@ set(MY_OPENCV_LIBS "opencv_core;opencv_imgcodecs;opencv_highgui")
 
 # ============================ CUDA SOURCE ====================================
 add_library(SOURCE_LIB_CUDA SHARED
+    cuda/mycuda.hh
     image/splice.cu image/splice.hh
     image/matrix.cu image/matrix.hh
-    lbp/lbpGpu.cu lbp/lbpCpu.cc
+    lbp/lbpGpu.cu lbp/lbpGpu.hh
+    lbp/lbpGpuKnn.cu lbp/lbpGpuKnn.hh
     knn/knnGpu.cu knn/knnGpu.hh
     )
 target_compile_features(SOURCE_LIB_CUDA PRIVATE
@@ -38,12 +40,11 @@ target_include_directories(SOURCE_LIB_CUDA PUBLIC
 # ============================ CXX SOURCE =====================================
 add_library(SOURCE_LIB STATIC
     entryPoint.cc entryPoint.hh
-    cuda/mycuda.hh
 
     knn/knnCpu.cc knn/knnCpu.hh
 
     lbp/lbpAlgorithm.hh
-    lbp/lbpCpu.hh lbp/lbpGpu.hh
+    lbp/lbpCpu.cc lbp/lbpCpu.hh
     my_opencv/wrapper.cc my_opencv/wrapper.hh)
 target_compile_features(SOURCE_LIB PRIVATE
     cxx_std_17

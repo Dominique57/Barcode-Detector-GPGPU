@@ -39,14 +39,6 @@ void executeAlgorithm(const std::string &path) {
     for (auto i =  0U; i < 100; ++i) {
         lbpGpu.run(image);
         kmeanGpu.transform(lbpGpu.getCudaFeatures(), labelsGpu);
-
-        for (auto j = 0U; j < labelsCpu.size(); ++j) {
-            if (labelsCpu[j] != labelsGpu[j]) {
-                std::cerr << "i:" << i << " j:" << j << " => (cpu)"
-                    << (int)labelsCpu[j] << " <> (gpu)" << (int)labelsGpu[j] << std::endl;
-                throw std::logic_error("Program failed: predicted labels are different!");
-            }
-        }
     }
 
     auto end2 = std::chrono::system_clock::now();
