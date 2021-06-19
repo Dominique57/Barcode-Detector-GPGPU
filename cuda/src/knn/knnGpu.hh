@@ -15,7 +15,7 @@ public:
     KnnGpu(KnnGpu &&kmeans) = delete;
     void operator=(KnnGpu &kmeans) = delete;
 
-    void transform(const Matrix<float> &features, std::vector<uchar> &labels);
+    void transform(const Matrix<uchar> &features, std::vector<uchar> &labels);
 
 
 private:

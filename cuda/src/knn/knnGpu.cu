@@ -15,39 +15,39 @@ KnnGpu::~KnnGpu() {
     cudaFree(cudaCentroids_.getData());
 }
 
-CUDA_DEV float execComputeDistance(const float* clusterCentroid, unsigned centroidWith, const half* feature) {
+CUDA_DEV float execComputeDistance(const float* clusterCentroid, unsigned centroidWith, const uchar* feature) {
     float sum = 0;
     for (auto i = 0U; i < centroidWith; ++i) {
-        float sub = __half2float(feature[i]) - clusterCentroid[i];
+        float sub = feature[i] - clusterCentroid[i];
         sum += sub * sub;
     }
 
     return sqrtf(sum);
 }
 
-CUDA_GLOBAL void execTransform(const Matrix<float> cudaFeatures, Matrix<> cudaCentroids, Matrix<unsigned char> cudaLabels) {
+CUDA_GLOBAL void execTransform(const Matrix<uchar> cudaFeatures, Matrix<float> cudaCentroids, Matrix<unsigned char> cudaLabels) {
     unsigned index = blockIdx.x * blockDim.x + threadIdx.x;
     if (index >= cudaFeatures.height())
         return;
 
     // Copy current features in local memory
-    half feature[256];
+    uchar feature[256];
     for (auto i = 0U; i < 256; ++i)
-        feature[i] = __float2half(cudaFeatures[index][i]);
+        feature[i] = cudaFeatures[index][i];
 
-    __shared__ float centroid[256];
+    __shared__ float centroid[2][256];
 
     // Get smallest euclidian distance cluster
     float dist = INFINITY;
     unsigned char cluster = 0;
     for (auto j = 0U; j < cudaCentroids.height(); ++j) {
-        centroid[threadIdx.x] = cudaCentroids[j][threadIdx.x]; //  coalescing
+        centroid[j%2][threadIdx.x] = cudaCentroids[j][threadIdx.x]; //  coalescing
         // centroid[threadIdx.x] = constCentroids_[j * 256 + threadIdx.x]; //  coalescing
         __syncthreads();
         // float curDist = execComputeDistance(centroids + (j * cudaCentroids.width()), cudaCentroids.width(), cudaFeatures[index]);
         float curDist = execComputeDistance(
             // cudaCentroids.getData() + (j * cudaCentroids.width()),
-            centroid,
+            centroid[j%2],
             cudaCentroids.width(),
             feature
         );
@@ -59,7 +59,7 @@ CUDA_GLOBAL void execTransform(const Matrix<float> cudaFeatures, Matrix<> cudaCe
     cudaLabels[index][0] = cluster;
 }
 
-void KnnGpu::transform(const Matrix<float> &cudaFeatures, std::vector<uchar> &labels) {
+void KnnGpu::transform(const Matrix<uchar> &cudaFeatures, std::vector<uchar> &labels) {
     if (cudaFeatures.height() > labels.size())
         throw std::invalid_argument("Invalid label buffer: to small!");
 
