@@ -127,7 +127,9 @@ void executeAlgorithm(const std::string &path) {
 }
 
 void handleImage(const std::string &imagePath) {
-    cv::Mat_<uchar> image = cv::imread(imagePath, cv::IMREAD_GRAYSCALE);
+    auto image_rgb = cv::imread(imagePath);
+    cv::Mat_<uchar> image;
+    cv::cvtColor(image_rgb, image, cv::COLOR_BGR2GRAY);
 
     // Show input image
     cv::Mat showCvImage;
@@ -145,7 +147,14 @@ void handleImage(const std::string &imagePath) {
 
     // Show result
     auto predictedLabels = my_cv::rebuildImageFromVector(labelsGpu, image.cols / SLICE_SIZE);
-    cv::imshow("Predicted image", predictedLabels);
+    auto barcode_rect_ret = get_position_barcode(predictedLabels);
+    cv::Rect& barcode_rect = barcode_rect_ret.first;
+    cv::Mat res_image = image_rgb.clone();
+    cv::rectangle(res_image, barcode_rect, cv::Scalar(255, 0, 255), 5);
+
+    cv::Mat showImageSalope;
+    cv::resize(res_image, showImageSalope, cv::Size(800, image.rows * 800 / image.cols));
+    cv::imshow("Predicted position of code bar", showImageSalope);
     cv::waitKey(0);
 }
 
@@ -182,7 +191,13 @@ void handleVideo(const std::string &videoPath) {
         // Show result
         auto predictedLabels = my_cv::rebuildImageFromVector(
             labelsGpu, grayImage.cols / SLICE_SIZE);
-        cv::imshow("Predicted", predictedLabels);
+
+        auto barcode_rect_ret = get_position_barcode(predictedLabels);
+        cv::Rect& barcode_rect = barcode_rect_ret.first;
+        cv::Mat res_image = frame.clone();
+        cv::rectangle(res_image, barcode_rect, cv::Scalar(255, 0, 255), 5);
+
+        cv::imshow("Predicted", res_image);
         cv::imshow("Original", frame);
         escapePressed = cv::waitKey(30) == 27;
     }
@@ -222,4 +237,24 @@ void handleCamera() {
             break;
     }
     // the camera will be deinitialized automatically in VideoCapture destructor
+}
+
+void generatePredictedRgb(const std::string &imagePath) {
+    auto image_rgb = cv::imread(imagePath);
+    cv::Mat_<uchar> image;
+    cv::cvtColor(image_rgb, image, cv::COLOR_BGR2GRAY);
+
+    // lbp on Gpu
+    auto lbpGpu = LbpGpu(image.cols, image.rows);
+    auto kmeanGpu = KnnGpu("kmeans.database", 16, 256);
+    auto labelsGpu = std::vector<uchar>(lbpGpu.numberOfPatches());
+
+    // Run
+    lbpGpu.run(image);
+    kmeanGpu.transform(lbpGpu.getCudaFeatures(), labelsGpu);
+
+    // Show result
+    auto predictedLabels = my_cv::rebuildImageFromVectorRgb(labelsGpu, image.cols / SLICE_SIZE);
+    cv::imshow("Predicted classes", predictedLabels);
+    cv::waitKey(0);
 }

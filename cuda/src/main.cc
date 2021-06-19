@@ -29,6 +29,8 @@ po::options_description define_options()
             ("camera,c", "use default system camera");
     desc.add_options()
         ("test,t", "run cpu and gpu implementations then check results equality");
+    desc.add_options()
+        ("gen-predicted-rgb,g", po::value<std::string>(), "Generates a predicted representative image");
     return desc;
 }
 
@@ -48,23 +50,21 @@ int run(const po::options_description& desc, const po::variables_map& vm)
         std::cout << desc << std::endl;
         return 0;
     }
-    if (vm["image"].empty() && vm["video"].empty() && vm["camera"].empty() && vm["test"].empty()) {
+    if (vm["image"].empty() && vm["video"].empty() && vm["camera"].empty()
+        && vm["test"].empty() && vm["gen-predicted-rgb"].empty()) {
         std::cerr << "No image or video path given !" << std::endl;
         return 1;
     }
 
-    try {
-        if (!vm["camera"].empty())
-            handleCamera();
-        if (!vm["image"].empty())
-            handleImage(vm["image"].as<std::string>());
-        if (!vm["video"].empty())
-            handleVideo(vm["video"].as<std::string>());
-        if (!vm["test"].empty())
-            executeAlgorithm("test.png");
-    } catch (std::exception& e) {
-        std::cerr << "[FATAL ERROR]: " << e.what() << std::endl;
-        return 2;
-    }
+    if (!vm["camera"].empty())
+        handleCamera();
+    if (!vm["image"].empty())
+        handleImage(vm["image"].as<std::string>());
+    if (!vm["video"].empty())
+        handleVideo(vm["video"].as<std::string>());
+    if (!vm["test"].empty())
+        executeAlgorithm("test.png");
+    if (!vm["gen-predicted-rgb"].empty())
+        generatePredictedRgb(vm["gen-predicted-rgb"].as<std::string>());
     return 0;
 }

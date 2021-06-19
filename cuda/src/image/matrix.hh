@@ -33,7 +33,7 @@ public:
             delete buffer_;
     }
 
-    CUDA_HOSTDEV data_t *operator[](unsigned i) const { return buffer_ + (i * width_); }
+    CUDA_HOSTDEV data_t *operator[](unsigned i) const { return buffer_ + (i * stride_); }
 
     CUDA_HOSTDEV data_t *&getData() { return buffer_; }
 
