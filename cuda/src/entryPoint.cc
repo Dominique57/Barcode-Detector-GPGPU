@@ -238,3 +238,23 @@ void handleCamera() {
     }
     // the camera will be deinitialized automatically in VideoCapture destructor
 }
+
+void generatePredictedRgb(const std::string &imagePath) {
+    auto image_rgb = cv::imread(imagePath);
+    cv::Mat_<uchar> image;
+    cv::cvtColor(image_rgb, image, cv::COLOR_BGR2GRAY);
+
+    // lbp on Gpu
+    auto lbpGpu = LbpGpu(image.cols, image.rows);
+    auto kmeanGpu = KnnGpu("kmeans.database", 16, 256);
+    auto labelsGpu = std::vector<uchar>(lbpGpu.numberOfPatches());
+
+    // Run
+    lbpGpu.run(image);
+    kmeanGpu.transform(lbpGpu.getCudaFeatures(), labelsGpu);
+
+    // Show result
+    auto predictedLabels = my_cv::rebuildImageFromVectorRgb(labelsGpu, image.cols / SLICE_SIZE);
+    cv::imshow("Predicted classes", predictedLabels);
+    cv::waitKey(0);
+}

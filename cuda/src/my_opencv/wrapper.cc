@@ -4,6 +4,7 @@ namespace my_cv {
     static inline bool isCorrectClass(unsigned char class_) {
         return class_ == 1;
     }
+
     cv::Mat_<uchar> rebuildImageFromVector(
         const std::vector<uchar> &labels, unsigned width) {
         auto resMat = cv::Mat_<uchar>(labels.size() / width, width);
@@ -12,6 +13,39 @@ namespace my_cv {
             for (auto x = 0; x < resMat.cols; ++x) {
                 unsigned char class_ = labels[y * resMat.cols + x];
                 resMat[y][x] = (isCorrectClass(class_))? 255: 0;
+            }
+        }
+
+        return resMat;
+    }
+
+
+    cv::Mat rebuildImageFromVectorRgb(const std::vector<uchar> &labels,
+                                              unsigned width) {
+        static cv::Vec3b random_lut[16] = {
+            {84,  0,   255},
+            {255, 0,   23},
+            {0,   116, 255},
+            {255, 100, 0},
+            {184, 0,   255},
+            {255, 200, 0},
+            {255, 0,   124},
+            {0,   15,  255},
+            {255, 0,   0},
+            {108, 255, 0},
+            {0,   255, 192},
+            {0,   255, 92},
+            {255, 0,   224},
+            {7,   255, 0},
+            {208, 255, 0},
+            {0,   216, 255}
+        };
+        auto resMat = cv::Mat(labels.size() / width, width, CV_8UC3);
+
+        for (auto y = 0; y < resMat.rows; y++) {
+            for (auto x = 0; x < resMat.cols; ++x) {
+                unsigned char class_ = labels[y * resMat.cols + x];
+                resMat.at<cv::Vec3b>(y, x) = random_lut[class_];
             }
         }
 
