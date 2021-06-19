@@ -22,10 +22,10 @@ namespace my_cv {
 std::pair<cv::Rect, bool> get_position_barcode(cv::Mat image)
 {
     using namespace cv;
-    GaussianBlur(image, image, Size(3,3), 5);
+    GaussianBlur(image, image, Size(3,3), 6);
     threshold(image, image, 150, 255, THRESH_BINARY);
-    erode(image, image, getStructuringElement(MORPH_RECT, Size(2,2)), Point(-1,-1), 1);
-    dilate(image, image, getStructuringElement(MORPH_RECT, Size(13,5)), Point(-1,-1), 2 );
+    erode(image, image, getStructuringElement(MORPH_ELLIPSE, Size(2,4)), Point(-1,-1), 1);
+    dilate(image, image, getStructuringElement(MORPH_RECT, Size(16,4)), Point(-1,-1), 2 );
     std::vector<std::vector<Point> > contours;
     findContours(image, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
 
