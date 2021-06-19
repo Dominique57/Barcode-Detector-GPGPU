@@ -15,10 +15,10 @@ endif()
 add_subdirectory(src)
 
 # final binary output
-find_package(Boost COMPONENTS program_options REQUIRED)
 if (CMAKE_BUILD_TYPE STREQUAL "Release")
     set(Boost_USE_STATIC_LIBS ON)
 endif()
+find_package(Boost COMPONENTS program_options REQUIRED)
 
 # add important compile features
 add_executable(${PROJECT_NAME} src/main.cc)
