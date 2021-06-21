@@ -31,9 +31,9 @@ CUDA_GLOBAL void execTransform(const Matrix<uchar> cudaFeatures, Matrix<float> c
         return;
 
     // Copy current features in local memory
-    uchar feature[256];
+    unsigned feature[256];
     for (auto i = 0U; i < 256; ++i)
-        feature[i] = cudaFeatures[index][i];
+        ((uchar*)feature)[i] = cudaFeatures[index][i];
 
     __shared__ float centroid[2][256];
 
@@ -49,7 +49,7 @@ CUDA_GLOBAL void execTransform(const Matrix<uchar> cudaFeatures, Matrix<float> c
             // cudaCentroids.getData() + (j * cudaCentroids.width()),
             centroid[j%2],
             cudaCentroids.width(),
-            feature
+            (uchar*)feature
         );
         if (curDist < dist) {
             dist = curDist;

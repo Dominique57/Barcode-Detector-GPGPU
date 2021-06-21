@@ -13,6 +13,7 @@ endif()
 
 # create SOURCE_LIB static library: user souce library
 add_subdirectory(src)
+add_subdirectory(bench)
 
 # final binary output
 if (CMAKE_BUILD_TYPE STREQUAL "Release")
