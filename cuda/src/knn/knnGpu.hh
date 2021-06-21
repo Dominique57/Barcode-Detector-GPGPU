@@ -17,6 +17,7 @@ public:
 
     void transform(const Matrix<uchar> &features, std::vector<uchar> &labels);
 
+    void transformMultiStep(const Matrix<uchar> &features, std::vector<uchar> &labels);
 
 private:
     Matrix<float> centroids_;
