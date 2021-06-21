@@ -250,3 +250,30 @@ void generatePredictedRgb(const std::string &imagePath) {
     cv::imshow("Predicted classes", predictedLabels);
     cv::waitKey(0);
 }
+
+void generateLbpOutFile(const std::vector<std::string> &imagePaths) {
+    auto indexName = 0;
+    for (const auto &imagePath: imagePaths) {
+        auto image_rgb = cv::imread(imagePath);
+        cv::Mat_<uchar> image;
+        cv::cvtColor(image_rgb, image, cv::COLOR_BGR2GRAY);
+
+        // lbp on Gpu
+        auto lbpGpu = LbpGpu(image.cols, image.rows);
+        auto kmeanGpu = KnnGpu("kmeans.database", 16, 256);
+        auto labelsGpu = std::vector<uchar>(lbpGpu.numberOfPatches());
+
+        // Run
+        lbpGpu.run(image);
+        auto mat = lbpGpu.getFeatures();
+
+        // Declare what you need
+        auto outPath = std::string("out") + std::to_string(indexName) + ".txt";
+        if (imagePath.size() > 4)
+            outPath = imagePath.substr(0, imagePath.size() - 4) + ".txt";
+
+        cv::FileStorage file(outPath, cv::FileStorage::WRITE);
+        file << "matName" << mat;
+        indexName += 1;
+    }
+}
