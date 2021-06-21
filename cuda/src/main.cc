@@ -31,6 +31,8 @@ po::options_description define_options()
         ("test,t", "run cpu and gpu implementations then check results equality");
     desc.add_options()
         ("gen-predicted-rgb,g", po::value<std::string>(), "Generates a predicted representative image");
+    desc.add_options()
+        ("gen-lbp,l", po::value<std::vector<std::string>>()->multitoken(), "Generates a out.txt file containing lbp");
     return desc;
 }
 
@@ -51,7 +53,7 @@ int run(const po::options_description& desc, const po::variables_map& vm)
         return 0;
     }
     if (vm["image"].empty() && vm["video"].empty() && vm["camera"].empty()
-        && vm["test"].empty() && vm["gen-predicted-rgb"].empty()) {
+        && vm["test"].empty() && vm["gen-predicted-rgb"].empty() && vm["gen-lbp"].empty()) {
         std::cerr << "No image or video path given !" << std::endl;
         return 1;
     }
@@ -66,5 +68,7 @@ int run(const po::options_description& desc, const po::variables_map& vm)
         executeAlgorithm("test.png");
     if (!vm["gen-predicted-rgb"].empty())
         generatePredictedRgb(vm["gen-predicted-rgb"].as<std::string>());
+    if (!vm["gen-lbp"].empty())
+        generateLbpOutFile(vm["gen-lbp"].as<std::vector<std::string>>());
     return 0;
 }

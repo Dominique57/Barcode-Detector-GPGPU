@@ -39,14 +39,6 @@ void executeAlgorithm(const std::string &path) {
     for (auto i =  0U; i < 100; ++i) {
         lbpGpu.run(image);
         kmeanGpu.transform(lbpGpu.getCudaFeatures(), labelsGpu);
-
-        for (auto j = 0U; j < labelsCpu.size(); ++j) {
-            if (labelsCpu[j] != labelsGpu[j]) {
-                std::cerr << "i:" << i << " j:" << j << " => (cpu)"
-                    << (int)labelsCpu[j] << " <> (gpu)" << (int)labelsGpu[j] << std::endl;
-                throw std::logic_error("Program failed: predicted labels are different!");
-            }
-        }
     }
 
     auto end2 = std::chrono::system_clock::now();
@@ -257,4 +249,31 @@ void generatePredictedRgb(const std::string &imagePath) {
     auto predictedLabels = my_cv::rebuildImageFromVectorRgb(labelsGpu, image.cols / SLICE_SIZE);
     cv::imshow("Predicted classes", predictedLabels);
     cv::waitKey(0);
+}
+
+void generateLbpOutFile(const std::vector<std::string> &imagePaths) {
+    auto indexName = 0;
+    for (const auto &imagePath: imagePaths) {
+        auto image_rgb = cv::imread(imagePath);
+        cv::Mat_<uchar> image;
+        cv::cvtColor(image_rgb, image, cv::COLOR_BGR2GRAY);
+
+        // lbp on Gpu
+        auto lbpGpu = LbpGpu(image.cols, image.rows);
+        auto kmeanGpu = KnnGpu("kmeans.database", 16, 256);
+        auto labelsGpu = std::vector<uchar>(lbpGpu.numberOfPatches());
+
+        // Run
+        lbpGpu.run(image);
+        auto mat = lbpGpu.getFeatures();
+
+        // Declare what you need
+        auto outPath = std::string("out") + std::to_string(indexName) + ".txt";
+        if (imagePath.size() > 4)
+            outPath = imagePath.substr(0, imagePath.size() - 4) + ".txt";
+
+        cv::FileStorage file(outPath, cv::FileStorage::WRITE);
+        file << "matName" << mat;
+        indexName += 1;
+    }
 }
