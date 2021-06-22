@@ -2,7 +2,7 @@
 
 namespace my_cv {
     static inline bool isCorrectClass(unsigned char class_) {
-        return class_ == 1;
+        return class_ == 3 || class_ == 12 || class_ == 15;
     }
 
     cv::Mat_<uchar> rebuildImageFromVector(

@@ -22,17 +22,17 @@ po::options_description define_options()
     desc.add_options()
         ("help,h", "show usage");
     desc.add_options()
-        ("image,i", po::value<std::string>(), "input image path");
+        ("image,i", po::value<std::string>(), "Predict an image\n  - input is one image path");
     desc.add_options()
-            ("video,v", po::value<std::string>(), "input video path");
+        ("video,v", po::value<std::string>(), "Predict a video\n  - input is one video path");
     desc.add_options()
-            ("camera,c", "use default system camera");
+        ("camera,c", po::value<unsigned>()->implicit_value(0), "Predict from live feed\n  - input is opencv camera identifier as unsigned");
     desc.add_options()
-        ("test,t", "run cpu and gpu implementations then check results equality");
+        ("gen-predicted-rgb,g", po::value<std::string>(), "Generates a predicted image with one color for each class");
     desc.add_options()
-        ("gen-predicted-rgb,g", po::value<std::string>(), "Generates a predicted representative image");
+        ("gen-lbp,l", po::value<std::vector<std::string>>()->multitoken(), "Generates the matrix of hisotgram of the lbp algorithm\n  - input is a list of image paths\n  - output is the same path with '.txt' added at the end");
     desc.add_options()
-        ("gen-lbp,l", po::value<std::vector<std::string>>()->multitoken(), "Generates a out.txt file containing lbp");
+        ("test,t", "Compare CPU and GPU implementations for safety checks");
     return desc;
 }
 
@@ -59,7 +59,7 @@ int run(const po::options_description& desc, const po::variables_map& vm)
     }
 
     if (!vm["camera"].empty())
-        handleCamera();
+        handleCamera(vm["camera"].as<unsigned>());
     if (!vm["image"].empty())
         handleImage(vm["image"].as<std::string>());
     if (!vm["video"].empty())

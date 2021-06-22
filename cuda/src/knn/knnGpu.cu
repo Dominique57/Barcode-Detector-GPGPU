@@ -27,13 +27,14 @@ CUDA_DEV float execComputeDistance(const float* clusterCentroid, unsigned centro
 
 CUDA_GLOBAL void execTransform(const Matrix<uchar> cudaFeatures, Matrix<float> cudaCentroids, Matrix<unsigned char> cudaLabels) {
     unsigned index = blockIdx.x * blockDim.x + threadIdx.x;
-    if (index >= cudaFeatures.height())
-        return;
 
     // Copy current features in local memory
-    unsigned feature[256];
-    for (auto i = 0U; i < 256; ++i)
-        ((uchar*)feature)[i] = cudaFeatures[index][i];
+    uchar feature[256];
+    if (index < cudaFeatures.height()) { // We need to execute only the threads in the array range and keep al threads for shared data loading
+        #pragma unroll
+        for (auto i = 0U; i < 256; ++i)
+            feature[i] = cudaFeatures[index][i];
+    }
 
     __shared__ float centroid[2][256];
 
@@ -42,21 +43,24 @@ CUDA_GLOBAL void execTransform(const Matrix<uchar> cudaFeatures, Matrix<float> c
     unsigned char cluster = 0;
     for (auto j = 0U; j < cudaCentroids.height(); ++j) {
         centroid[j%2][threadIdx.x] = cudaCentroids[j][threadIdx.x]; //  coalescing
-        // centroid[threadIdx.x] = constCentroids_[j * 256 + threadIdx.x]; //  coalescing
         __syncthreads();
-        // float curDist = execComputeDistance(centroids + (j * cudaCentroids.width()), cudaCentroids.width(), cudaFeatures[index]);
-        float curDist = execComputeDistance(
-            // cudaCentroids.getData() + (j * cudaCentroids.width()),
-            centroid[j%2],
-            cudaCentroids.width(),
-            (uchar*)feature
-        );
-        if (curDist < dist) {
-            dist = curDist;
-            cluster = j;
+
+        if (index < cudaFeatures.height()) { // We need to execute only the threads in the array range and keep al threads for shared data loading
+            float curDist = execComputeDistance(
+                // cudaCentroids.getData() + (j * cudaCentroids.width()),
+                centroid[j%2],
+                cudaCentroids.width(),
+                feature
+            );
+            if (curDist < dist) {
+                dist = curDist;
+                cluster = j;
+            }
         }
     }
-    cudaLabels[index][0] = cluster;
+
+    if (index < cudaFeatures.height()) // We need to execute only the threads in the array range and keep al threads for shared data loading
+        cudaLabels[index][0] = cluster;
 }
 
 void KnnGpu::transform(const Matrix<uchar> &cudaFeatures, std::vector<uchar> &labels) {
@@ -73,6 +77,7 @@ void KnnGpu::transform(const Matrix<uchar> &cudaFeatures, std::vector<uchar> &la
     unsigned gridWidth = cudaFeatures.height() / blockWidth;
     if (gridWidth % blockWidth != 0)
         gridWidth += 1;
+    std::cerr << cudaFeatures.height() << ";" << blockWidth * gridWidth << std::endl;
 
     // Execute kernel
     execTransform<<<gridWidth, blockWidth>>>(cudaFeatures, cudaCentroids_, cudaLabels);

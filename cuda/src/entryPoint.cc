@@ -36,10 +36,8 @@ void executeAlgorithm(const std::string &path) {
     std::cout << "Running GPU (1050ti)" << std::endl;
     auto start2 = std::chrono::system_clock::now();
 
-    for (auto i =  0U; i < 100; ++i) {
-        lbpGpu.run(image);
-        kmeanGpu.transform(lbpGpu.getCudaFeatures(), labelsGpu);
-    }
+    lbpGpu.run(image);
+    kmeanGpu.transform(lbpGpu.getCudaFeatures(), labelsGpu);
 
     auto end2 = std::chrono::system_clock::now();
     auto elapsedMs2 = std::chrono::duration_cast<std::chrono::milliseconds>(end2 - start2);
@@ -195,37 +193,45 @@ void handleVideo(const std::string &videoPath) {
     }
 }
 
-void handleCamera() {
-    throw std::logic_error("Not implemented yet!");
-    cv::Mat frame;
-    //--- INITIALIZE VIDEOCAPTURE
+void handleCamera(unsigned cameraId) {
     cv::VideoCapture cap;
-    // open the default camera using default API
-    // cap.open(0);
-    // OR advance usage: select any API backend
-    int deviceID = 0;             // 0 = open default camera
     int apiID = cv::CAP_ANY;      // 0 = autodetect default API
-    // open selected camera using selected API
-    cap.open(deviceID, apiID);
-    // check if we succeeded
-    if (!cap.isOpened()) {
+    cap.open(cameraId, apiID);
+    if (!cap.isOpened())
         throw std::logic_error("Unable to open default camera !");
-    }
-    //--- GRAB AND WRITE LOOP
-    std::cout << "Start grabbing" << std::endl
-         << "Press any key to terminate" << std::endl;
-    for (;;)
-    {
-        // wait for a new frame from camera and store it into 'frame'
+
+    // lbp on Gpu
+    auto lbpGpu = LbpGpu(
+        (unsigned)(cap.get(cv::CAP_PROP_FRAME_WIDTH)),
+        (unsigned)(cap.get(cv::CAP_PROP_FRAME_HEIGHT))
+    );
+    auto kmeanGpu = KnnGpu("kmeans.database", 16, 256);
+    auto labelsGpu = std::vector<uchar>(lbpGpu.numberOfPatches());
+
+    cv::Mat frame;
+    for (;;) {
         cap.read(frame);
-        // check if we succeeded
-        if (frame.empty()) {
-            std::cerr << "ERROR! blank frame grabbed\n";
+        if (frame.empty())
             break;
-        }
-        // show live and wait for a key with timeout long enough to show images
-        imshow("Live", frame);
-        if (cv::waitKey(5) >= 0)
+
+        // Run
+        cv::Mat_<uchar> grayImage;
+        cv::cvtColor(frame, grayImage, cv::COLOR_BGR2GRAY);
+        lbpGpu.run(grayImage);
+        kmeanGpu.transform(lbpGpu.getCudaFeatures(), labelsGpu);
+
+        // Show result
+        auto predictedLabels = my_cv::rebuildImageFromVector(
+            labelsGpu, grayImage.cols / SLICE_SIZE);
+
+        auto barcode_rect_ret = get_position_barcode(predictedLabels);
+        cv::Rect& barcode_rect = barcode_rect_ret.first;
+        cv::Mat res_image = frame.clone();
+        cv::rectangle(res_image, barcode_rect, cv::Scalar(255, 0, 255), 5);
+
+        cv::imshow("Predicted", res_image);
+        cv::imshow("Original", frame);
+        if (cv::waitKey(1) == 27)
             break;
     }
     // the camera will be deinitialized automatically in VideoCapture destructor
@@ -268,10 +274,7 @@ void generateLbpOutFile(const std::vector<std::string> &imagePaths) {
         auto mat = lbpGpu.getFeatures();
 
         // Declare what you need
-        auto outPath = std::string("out") + std::to_string(indexName) + ".txt";
-        if (imagePath.size() > 4)
-            outPath = imagePath.substr(0, imagePath.size() - 4) + ".txt";
-
+        auto outPath = imagePath + ".txt";
         cv::FileStorage file(outPath, cv::FileStorage::WRITE);
         file << "matName" << mat;
         indexName += 1;
