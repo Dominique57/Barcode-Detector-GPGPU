@@ -77,7 +77,6 @@ void KnnGpu::transform(const Matrix<uchar> &cudaFeatures, std::vector<uchar> &la
     unsigned gridWidth = cudaFeatures.height() / blockWidth;
     if (gridWidth % blockWidth != 0)
         gridWidth += 1;
-    std::cerr << cudaFeatures.height() << ";" << blockWidth * gridWidth << std::endl;
 
     // Execute kernel
     execTransform<<<gridWidth, blockWidth>>>(cudaFeatures, cudaCentroids_, cudaLabels);

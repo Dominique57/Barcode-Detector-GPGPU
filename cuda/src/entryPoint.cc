@@ -121,11 +121,6 @@ void handleImage(const std::string &imagePath) {
     cv::Mat_<uchar> image;
     cv::cvtColor(image_rgb, image, cv::COLOR_BGR2GRAY);
 
-    // Show input image
-    cv::Mat showCvImage;
-    cv::resize(image, showCvImage, cv::Size(800, image.rows * 800 / image.cols));
-    cv::imshow("Original Image", showCvImage);
-
     // lbp on Gpu
     auto lbpGpu = LbpGpu(image.cols, image.rows);
     auto kmeanGpu = KnnGpu("kmeans.database", 16, 256);
@@ -142,9 +137,9 @@ void handleImage(const std::string &imagePath) {
     cv::Mat res_image = image_rgb.clone();
     cv::rectangle(res_image, barcode_rect, cv::Scalar(255, 0, 255), 5);
 
-    cv::Mat showImageSalope;
-    cv::resize(res_image, showImageSalope, cv::Size(800, image.rows * 800 / image.cols));
-    cv::imshow("Predicted position of code bar", showImageSalope);
+    cv::Mat showImage;
+    cv::resize(res_image, showImage, cv::Size(800, image.rows * 800 / image.cols));
+    cv::imshow("Predicted position of code bar", showImage);
     cv::waitKey(0);
 }
 
@@ -152,9 +147,6 @@ void handleVideo(const std::string &videoPath) {
     cv::VideoCapture cap(videoPath);
     if (!cap.isOpened())
         throw std::invalid_argument("Cannot open the video file !");
-
-    namedWindow("Original", cv::WINDOW_AUTOSIZE); //create a window called "MyVideo"
-    namedWindow("Predicted", cv::WINDOW_AUTOSIZE); //create a window called "MyVideo"
 
     // lbp on Gpu
     auto lbpGpu = LbpGpu(
@@ -188,7 +180,6 @@ void handleVideo(const std::string &videoPath) {
         cv::rectangle(res_image, barcode_rect, cv::Scalar(255, 0, 255), 5);
 
         cv::imshow("Predicted", res_image);
-        cv::imshow("Original", frame);
         escapePressed = cv::waitKey(30) == 27;
     }
 }
@@ -230,7 +221,6 @@ void handleCamera(unsigned cameraId) {
         cv::rectangle(res_image, barcode_rect, cv::Scalar(255, 0, 255), 5);
 
         cv::imshow("Predicted", res_image);
-        cv::imshow("Original", frame);
         if (cv::waitKey(1) == 27)
             break;
     }
