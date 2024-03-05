@@ -2,7 +2,7 @@ include(FetchContent)
 
 FetchContent_Declare(
     GoogleBenchmark
-    URL https://github.com/google/benchmark/archive/v1.4.1.tar.gz
+    URL https://github.com/google/benchmark/archive/v1.8.3.tar.gz
 )
 
 if (NOT GoogleBenchmark_POPULATED)

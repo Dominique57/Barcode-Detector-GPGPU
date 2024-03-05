@@ -156,9 +156,6 @@ void handleVideo(const std::string& databasePath, const std::string &videoPath) 
     auto kmeanGpu = KnnGpu(databasePath, 16, 256);
     auto labelsGpu = std::vector<uchar>(lbpGpu.numberOfPatches());
 
-    // Create window
-    cv::namedWindow("Predicted", cv::WINDOW_AUTOSIZE);
-
     cv::Mat frame;
     bool escapePressed = false;
     while (!escapePressed) {
@@ -184,10 +181,6 @@ void handleVideo(const std::string& databasePath, const std::string &videoPath) 
 
         cv::imshow("Predicted", res_image);
         escapePressed = cv::waitKey(30) == 27;
-
-        std::cout << res_image.cols << "x" << res_image.rows << std::endl;
-        auto winRect = cv::getWindowImageRect("Predicted");
-        std::cout << winRect.x << "x" << winRect.y << ":" << winRect.width << "!" << winRect.height << std::endl;
     }
 }
 
