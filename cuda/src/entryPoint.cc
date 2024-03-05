@@ -8,12 +8,12 @@
 
 #include "my_opencv/wrapper.hh"
 
-void executeAlgorithm(const std::string &path) {
+void executeAlgorithm(const std::string& databasePath, const std::string &path) {
     cv::Mat_<uchar> image = cv::imread(path, cv::IMREAD_GRAYSCALE);
 
     // lbp on cpu
     auto lbpCpu = LbpCpu(image.cols, image.rows);
-    auto kmeansCpu = KnnCpu("kmeans.database", 16, 256);
+    auto kmeansCpu = KnnCpu(databasePath, 16, 256);
     auto labelsCpu = std::vector<uchar>(lbpCpu.numberOfPatches());
 
     std::cout << "Running CPU (1core|1thread)" << std::endl;
@@ -29,7 +29,7 @@ void executeAlgorithm(const std::string &path) {
 
     // lbp on Gpu
     auto lbpGpu = LbpGpu(image.cols, image.rows);
-    auto kmeanGpu = KnnGpu("kmeans.database", 16, 256);
+    auto kmeanGpu = KnnGpu(databasePath, 16, 256);
     // auto labelsGpu = Matrix<unsigned char>(1, lbpGpu.numberOfPatches());
     auto labelsGpu = std::vector<uchar>(lbpCpu.numberOfPatches());
 
@@ -116,14 +116,14 @@ void executeAlgorithm(const std::string &path) {
     }
 }
 
-void handleImage(const std::string &imagePath) {
+void handleImage(const std::string& databasePath, const std::string &imagePath) {
     auto image_rgb = cv::imread(imagePath);
     cv::Mat_<uchar> image;
     cv::cvtColor(image_rgb, image, cv::COLOR_BGR2GRAY);
 
     // lbp on Gpu
     auto lbpGpu = LbpGpu(image.cols, image.rows);
-    auto kmeanGpu = KnnGpu("kmeans.database", 16, 256);
+    auto kmeanGpu = KnnGpu(databasePath, 16, 256);
     auto labelsGpu = std::vector<uchar>(lbpGpu.numberOfPatches());
 
     // Run
@@ -143,7 +143,7 @@ void handleImage(const std::string &imagePath) {
     cv::waitKey(0);
 }
 
-void handleVideo(const std::string &videoPath) {
+void handleVideo(const std::string& databasePath, const std::string &videoPath) {
     cv::VideoCapture cap(videoPath);
     if (!cap.isOpened())
         throw std::invalid_argument("Cannot open the video file !");
@@ -153,8 +153,11 @@ void handleVideo(const std::string &videoPath) {
         (unsigned)(cap.get(cv::CAP_PROP_FRAME_WIDTH)),
         (unsigned)(cap.get(cv::CAP_PROP_FRAME_HEIGHT))
     );
-    auto kmeanGpu = KnnGpu("kmeans.database", 16, 256);
+    auto kmeanGpu = KnnGpu(databasePath, 16, 256);
     auto labelsGpu = std::vector<uchar>(lbpGpu.numberOfPatches());
+
+    // Create window
+    cv::namedWindow("Predicted", cv::WINDOW_AUTOSIZE);
 
     cv::Mat frame;
     bool escapePressed = false;
@@ -181,10 +184,14 @@ void handleVideo(const std::string &videoPath) {
 
         cv::imshow("Predicted", res_image);
         escapePressed = cv::waitKey(30) == 27;
+
+        std::cout << res_image.cols << "x" << res_image.rows << std::endl;
+        auto winRect = cv::getWindowImageRect("Predicted");
+        std::cout << winRect.x << "x" << winRect.y << ":" << winRect.width << "!" << winRect.height << std::endl;
     }
 }
 
-void handleCamera(unsigned cameraId) {
+void handleCamera(const std::string& databasePath, unsigned cameraId) {
     cv::VideoCapture cap;
     int apiID = cv::CAP_ANY;      // 0 = autodetect default API
     cap.open(cameraId, apiID);
@@ -196,7 +203,7 @@ void handleCamera(unsigned cameraId) {
         (unsigned)(cap.get(cv::CAP_PROP_FRAME_WIDTH)),
         (unsigned)(cap.get(cv::CAP_PROP_FRAME_HEIGHT))
     );
-    auto kmeanGpu = KnnGpu("kmeans.database", 16, 256);
+    auto kmeanGpu = KnnGpu(databasePath, 16, 256);
     auto labelsGpu = std::vector<uchar>(lbpGpu.numberOfPatches());
 
     cv::Mat frame;
@@ -227,14 +234,14 @@ void handleCamera(unsigned cameraId) {
     // the camera will be deinitialized automatically in VideoCapture destructor
 }
 
-void generatePredictedRgb(const std::string &imagePath) {
+void generatePredictedRgb(const std::string& databasePath, const std::string &imagePath) {
     auto image_rgb = cv::imread(imagePath);
     cv::Mat_<uchar> image;
     cv::cvtColor(image_rgb, image, cv::COLOR_BGR2GRAY);
 
     // lbp on Gpu
     auto lbpGpu = LbpGpu(image.cols, image.rows);
-    auto kmeanGpu = KnnGpu("kmeans.database", 16, 256);
+    auto kmeanGpu = KnnGpu(databasePath, 16, 256);
     auto labelsGpu = std::vector<uchar>(lbpGpu.numberOfPatches());
 
     // Run
@@ -247,7 +254,7 @@ void generatePredictedRgb(const std::string &imagePath) {
     cv::waitKey(0);
 }
 
-void generateLbpOutFile(const std::vector<std::string> &imagePaths) {
+void generateLbpOutFile(const std::string& databasePath, const std::vector<std::string> &imagePaths) {
     auto indexName = 0;
     for (const auto &imagePath: imagePaths) {
         auto image_rgb = cv::imread(imagePath);
@@ -256,7 +263,7 @@ void generateLbpOutFile(const std::vector<std::string> &imagePaths) {
 
         // lbp on Gpu
         auto lbpGpu = LbpGpu(image.cols, image.rows);
-        auto kmeanGpu = KnnGpu("kmeans.database", 16, 256);
+        auto kmeanGpu = KnnGpu(databasePath, 16, 256);
         auto labelsGpu = std::vector<uchar>(lbpGpu.numberOfPatches());
 
         // Run

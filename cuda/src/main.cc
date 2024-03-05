@@ -22,6 +22,8 @@ po::options_description define_options()
     desc.add_options()
         ("help,h", "show usage");
     desc.add_options()
+        ("database,d", po::value<std::string>()->required(), "Databse of lbp centrois\n  - input is one database path");
+    desc.add_options()
         ("image,i", po::value<std::string>(), "Predict an image\n  - input is one image path");
     desc.add_options()
         ("video,v", po::value<std::string>(), "Predict a video\n  - input is one video path");
@@ -54,21 +56,21 @@ int run(const po::options_description& desc, const po::variables_map& vm)
     }
     if (vm["image"].empty() && vm["video"].empty() && vm["camera"].empty()
         && vm["test"].empty() && vm["gen-predicted-rgb"].empty() && vm["gen-lbp"].empty()) {
-        std::cerr << "No image or video path given !" << std::endl;
+        std::cerr << "[ERROR] No image or video path given !" << std::endl;
         return 1;
     }
 
     if (!vm["camera"].empty())
-        handleCamera(vm["camera"].as<unsigned>());
+        handleCamera(vm["database"].as<std::string>(), vm["camera"].as<unsigned>());
     if (!vm["image"].empty())
-        handleImage(vm["image"].as<std::string>());
+        handleImage(vm["database"].as<std::string>(), vm["image"].as<std::string>());
     if (!vm["video"].empty())
-        handleVideo(vm["video"].as<std::string>());
+        handleVideo(vm["database"].as<std::string>(), vm["video"].as<std::string>());
     if (!vm["test"].empty())
-        executeAlgorithm("test.png");
+        executeAlgorithm(vm["database"].as<std::string>(), "test.png");
     if (!vm["gen-predicted-rgb"].empty())
-        generatePredictedRgb(vm["gen-predicted-rgb"].as<std::string>());
+        generatePredictedRgb(vm["database"].as<std::string>(), vm["gen-predicted-rgb"].as<std::string>());
     if (!vm["gen-lbp"].empty())
-        generateLbpOutFile(vm["gen-lbp"].as<std::vector<std::string>>());
+        generateLbpOutFile(vm["database"].as<std::string>(), vm["gen-lbp"].as<std::vector<std::string>>());
     return 0;
 }
